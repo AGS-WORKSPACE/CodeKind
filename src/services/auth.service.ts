@@ -1,1 +1,23 @@
-import{api}from'./api';export type Role='STUDENT'|'TUTOR'|'ADMIN';export type SessionUser={id:string;firstName:string;lastName:string;email:string;role:Role;avatar?:string|null;country?:string|null;timezone:string};export const authService={me:()=>api<{user:SessionUser}>('/auth/me'),login:(email:string,password:string)=>api<{user:SessionUser}>('/auth/login',{method:'POST',body:JSON.stringify({email,password})}),register:(input:{firstName:string;lastName:string;email:string;password:string;accountType:'STUDENT'|'TUTOR'})=>api<{user:SessionUser}>('/auth/register',{method:'POST',body:JSON.stringify(input)}),logout:()=>api<Record<string,never>>('/auth/logout',{method:'POST'})};
+import{ApiError,api}from'./api';
+import{authRepository}from'../mocks/auth.repository';
+export type Role='STUDENT'|'TUTOR'|'ADMIN';
+export type SessionUser={id:string;firstName:string;lastName:string;email:string;role:Role;avatar?:string|null;country?:string|null;timezone:string};
+type RegisterInput={firstName:string;lastName:string;email:string;password:string;accountType:'STUDENT'|'TUTOR'};
+/* An ApiError means a real backend answered (401, 422…), so it must surface. Anything else is a
+   failed connection — fall back to the offline demo session instead of showing a dead login form. */
+const unreachable=(error:unknown)=>!(error instanceof ApiError);
+export const authService={
+ me:async()=>{
+  try{return await api<{user:SessionUser}>('/auth/me')}
+  catch(error){if(!unreachable(error))throw error;const user=authRepository.session();if(!user)throw error;return{user}}},
+ login:async(email:string,password:string)=>{
+  try{return await api<{user:SessionUser}>('/auth/login',{method:'POST',body:JSON.stringify({email,password})})}
+  catch(error){if(!unreachable(error))throw error;return{user:await authRepository.login(email)}}},
+ register:async(input:RegisterInput)=>{
+  try{return await api<{user:SessionUser}>('/auth/register',{method:'POST',body:JSON.stringify(input)})}
+  catch(error){if(!unreachable(error))throw error;return{user:await authRepository.register(input)}}},
+ logout:async()=>{
+  try{return await api<Record<string,never>>('/auth/logout',{method:'POST'})}
+  catch(error){if(!unreachable(error))throw error;return{} as Record<string,never>}
+  finally{authRepository.clear()}},
+};
