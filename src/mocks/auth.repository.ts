@@ -1,4 +1,5 @@
-import type{Role,SessionUser}from'../services/auth.service';
+import type{AccountType,Role,SessionUser}from'../services/auth.service';
+import{orgRepository}from'./org.repository';
 /* Offline stand-in for /auth/*. Used only when the API is unreachable, so it disappears
    on its own once a backend is running. The session survives a refresh via localStorage. */
 const KEY='codekind.session';
@@ -8,10 +9,11 @@ const wait=<T>(value:T,ms=260)=>new Promise<T>(resolve=>setTimeout(()=>resolve(v
 export const demoAccounts:SessionUser[]=[
 {id:'demo-student',firstName:'Alex',lastName:'Lee',email:'student@demo.com',role:'STUDENT',country:'United Kingdom',timezone:'Europe/London'},
 {id:'demo-tutor',firstName:'David',lastName:'Okafor',email:'tutor@demo.com',role:'TUTOR',country:'Nigeria',timezone:'Africa/Lagos'},
-{id:'demo-admin',firstName:'Sam',lastName:'Adeyemi',email:'admin@demo.com',role:'ADMIN',country:'Nigeria',timezone:'Africa/Lagos'}];
+{id:'demo-admin',firstName:'Sam',lastName:'Adeyemi',email:'admin@demo.com',role:'ADMIN',country:'Nigeria',timezone:'Africa/Lagos'},
+{id:'demo-org',firstName:'Priya',lastName:'Raman',email:'org@demo.com',role:'ORGANIZATION',country:'United Kingdom',timezone:'Europe/London',orgId:'org-northwind',orgName:'Northwind Training'}];
 
 const words=(value:string)=>value.replace(/[^a-z]+/gi,' ').trim().split(' ').filter(Boolean).map(w=>w[0]!.toUpperCase()+w.slice(1).toLowerCase());
-const roleFor=(email:string):Role=>{const at=email.toLowerCase();return at.includes('admin')?'ADMIN':at.includes('tutor')||at.includes('trainer')?'TUTOR':'STUDENT'};
+const roleFor=(email:string):Role=>{const at=email.toLowerCase();return at.includes('admin')?'ADMIN':at.includes('org')?'ORGANIZATION':at.includes('tutor')||at.includes('trainer')?'TUTOR':'STUDENT'};
 /* Any other address still signs in, so a demo never dead-ends on an unknown email. */
 const guestFor=(email:string):SessionUser=>{const[first,last]=words(email.split('@')[0]??'');return{id:`demo-${email.toLowerCase().replace(/[^a-z0-9]+/g,'-')}`,firstName:first??'Guest',lastName:last??'Learner',email,role:roleFor(email),country:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone}};
 
@@ -22,7 +24,30 @@ export const authRepository={
  accounts:demoAccounts,
  session:read,
  login:async(email:string)=>{const match=demoAccounts.find(a=>a.email.toLowerCase()===email.trim().toLowerCase());const user=match??guestFor(email.trim());write(user);return wait(user)},
- register:async(input:{firstName:string;lastName:string;email:string;accountType:'STUDENT'|'TUTOR'})=>{const user:SessionUser={id:`demo-${Date.now()}`,firstName:input.firstName||'New',lastName:input.lastName||'Member',email:input.email,role:input.accountType,country:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone};write(user);return wait(user)},
+ register:async(input:{firstName:string;lastName:string;email:string;accountType:AccountType;organisationName?:string;inviteToken?:string})=>{
+  const firstName=input.firstName||'New';
+  const lastName=input.lastName||'Member';
+  const base:SessionUser={id:`demo-${Date.now()}`,firstName,lastName,email:input.email,role:'STUDENT',country:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone};
+  // Joining by invitation always produces a trainer inside the inviting organisation,
+  // whatever the signup form said — the token is the authority, not the chooser.
+  if(input.inviteToken){
+   const joined=await orgRepository.accept(input.inviteToken,{name:`${firstName} ${lastName}`,email:input.email});
+   if(joined){
+    const user:SessionUser={...base,role:'TUTOR',orgId:joined.orgId,orgName:joined.orgName};
+    write(user);
+    return wait(user);
+   }
+  }
+  if(input.accountType==='ORGANIZATION'){
+   const org=await orgRepository.create({name:input.organisationName||`${firstName}'s training`,contactEmail:input.email,ownerName:`${firstName} ${lastName}`});
+   const user:SessionUser={...base,role:'ORGANIZATION',orgId:org.id,orgName:org.name};
+   write(user);
+   return wait(user);
+  }
+  const user:SessionUser={...base,role:input.accountType};
+  write(user);
+  return wait(user);
+ },
  clear:()=>write(null),
  logout:async()=>{write(null);return wait(null)},
 };

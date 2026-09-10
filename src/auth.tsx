@@ -17,7 +17,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 }
 
 /** Where a signed-in user lands after login, and where the nav's workspace link points. */
-export const workspacePath=(role:Role)=>role==='STUDENT'?'/student/dashboard':role==='TUTOR'?'/tutor/dashboard':'/admin';
+export const workspacePath=(role:Role)=>role==='STUDENT'?'/student/dashboard':role==='TUTOR'?'/tutor/dashboard':role==='ORGANIZATION'?'/org/dashboard':'/admin';
 
 export const useAuth=()=>{const value=useContext(AuthContext);if(!value)throw new Error('useAuth must be used inside AuthProvider');return value};
 

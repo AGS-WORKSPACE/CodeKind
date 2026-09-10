@@ -1,8 +1,10 @@
 import{ApiError,api}from'./api';
 import{authRepository}from'../mocks/auth.repository';
-export type Role='STUDENT'|'TUTOR'|'ADMIN';
-export type SessionUser={id:string;firstName:string;lastName:string;email:string;role:Role;avatar?:string|null;country?:string|null;timezone:string};
-type RegisterInput={firstName:string;lastName:string;email:string;password:string;accountType:'STUDENT'|'TUTOR'};
+export type Role='STUDENT'|'TUTOR'|'ADMIN'|'ORGANIZATION';
+export type SessionUser={id:string;firstName:string;lastName:string;email:string;role:Role;avatar?:string|null;country?:string|null;timezone:string;orgId?:string|null;orgName?:string|null};
+export type AccountType='STUDENT'|'TUTOR'|'ORGANIZATION';
+/** organisationName is set when accountType is ORGANIZATION; inviteToken when joining an existing one. */
+type RegisterInput={firstName:string;lastName:string;email:string;password:string;accountType:AccountType;organisationName?:string;inviteToken?:string};
 /* An ApiError means a real backend answered (401, 422…), so it must surface. Anything else is a
    failed connection — fall back to the offline demo session instead of showing a dead login form. */
 const unreachable=(error:unknown)=>!(error instanceof ApiError);

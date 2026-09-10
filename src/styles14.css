@@ -100,3 +100,54 @@
 /* The sidebar log out control is a real button now, so strip the UA chrome. */
 .sidebar-footer .logout{width:100%;border:0;background:none;text-align:left;font-family:inherit}
 .admin-logout{width:100%;border:0;background:none;text-align:left;font-family:inherit;font-size:inherit;color:inherit}
+
+/* --- Organisation signup fork --- */
+.teach-as{display:grid;gap:9px;margin-top:4px}
+.teach-as>span{font-size:12px;font-weight:700}
+.teach-as small{font-size:11px;color:var(--muted);line-height:1.5}
+.invite-banner{display:flex;gap:12px;align-items:flex-start;background:var(--mint2);border:1px solid #cbe9d8;border-radius:12px;padding:14px}
+.invite-banner svg{flex:none;color:var(--green);margin-top:2px}
+.invite-banner strong{display:block;font-size:13px}
+.invite-banner span{display:block;font-size:12px;color:#4a6a5d;margin-top:3px;line-height:1.5}
+
+/* --- Organisation workspace --- */
+.org-panel{display:grid;gap:14px;align-content:start}
+.org-panel h3{margin:0;font-size:15px}
+.org-subhead{margin-top:8px!important}
+.org-count{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:7px;border-radius:20px;background:#eef4f1;color:#41695a;font:500 10px DM Mono,ui-monospace,monospace;vertical-align:middle}
+.org-empty{margin:0;font-size:13px;color:var(--muted)}
+.org-invite-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:16px;align-items:start}
+.org-panel label{display:grid;gap:6px;font-size:12px;font-weight:700}
+.org-panel label input{border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:13px;font-weight:400;outline:0}
+.org-panel label input:focus{border-color:#8dc3a9}
+
+.org-table{width:100%;border-collapse:collapse;font-size:13px}
+.org-table th{text-align:left;font:500 10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:0 10px 9px;border-bottom:1px solid var(--line)}
+.org-table td{padding:13px 10px;border-bottom:1px solid #eef2f0;vertical-align:middle}
+.org-table td strong{display:block;font-size:13px}
+.org-table td span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.org-tag{display:inline-block;padding:4px 9px;border-radius:20px;background:#eef4f1;color:#41695a;font:500 10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.04em}
+.org-tag.owner{background:var(--yellow);color:#6b5119}
+.org-tag.ok{background:#dcf5e6;color:#26694a;text-transform:none}
+
+.org-invites{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.org-invites li{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:11px;padding:12px 13px}
+.org-invites strong{display:block;font-size:13px}
+.org-invites span{font-size:11px;color:var(--muted)}
+.org-invite-actions{display:flex;align-items:center;gap:7px;flex:none}
+.icon-danger{border:1px solid var(--line);background:#fff;border-radius:8px;width:31px;height:31px;display:grid;place-items:center;color:#a8455a;transition:.2s}
+.icon-danger:hover{background:#fdeef1;border-color:#f0c2cd}
+.btn.ghost.small{padding:7px 11px;font-size:11px;gap:6px}
+
+.invite-created{display:grid;gap:8px;justify-items:start;background:var(--mint2);border:1px solid #cbe9d8;border-radius:11px;padding:13px}
+.invite-created strong{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.invite-created>span{font-size:11px;color:#4a6a5d;line-height:1.5}
+.invite-created code{width:100%;overflow-wrap:anywhere;background:#fff;border:1px solid #d5e8dd;border-radius:8px;padding:9px 10px;font:11px DM Mono,ui-monospace,monospace;color:#2c5f4a}
+
+@media(max-width:900px){.org-invite-layout{grid-template-columns:1fr}}
+@media(max-width:650px){
+ .org-table thead{display:none}
+ .org-table tr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid #eef2f0}
+ .org-table td{border:0;padding:0}
+ .org-invites li{flex-direction:column;align-items:flex-start}
+}
