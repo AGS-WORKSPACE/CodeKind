@@ -1,0 +1,91 @@
+/* Rotating multi-domain hero. Colours come from the active domain via the
+   --accent / --shell / --bar / --glow custom properties set on .domain-hero. */
+
+.domain-hero{--accent:#2f8f68;--shell:#0e211c;--bar:#173029;--glow:#b9f4d0}
+.domain-hero .pill{background:color-mix(in srgb,var(--accent) 9%,#fff);border-color:color-mix(in srgb,var(--accent) 26%,#fff);color:color-mix(in srgb,var(--accent) 82%,#000);transition:.45s}
+.domain-hero h1 em{color:var(--accent);transition:.45s}
+/* Reserve the two-line headline and two-line blurb so switching domains never shifts the page. */
+.domain-hero h1{min-height:2.08em}
+.domain-hero .hero-lede>p{min-height:3.3em}
+.domain-hero .searchbar{box-shadow:0 12px 40px color-mix(in srgb,var(--accent) 18%,transparent);transition:.45s}
+
+.hero-lede{animation:lede-in .55s cubic-bezier(.2,.7,.3,1) both}
+@keyframes lede-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Domain rail — doubles as the breadth signal and the rotation control. */
+.domain-rail{display:flex;align-items:flex-end;gap:10px;margin:0 0 26px}
+.domain-chips{position:relative;display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.domain-chip{flex:none;position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;color:#5b6b66;border-radius:30px;padding:8px 14px;font-size:12.5px;font-weight:700;transition:.25s}
+.domain-chip:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
+.domain-chip svg{color:color-mix(in srgb,var(--accent) 70%,#8a9793);transition:.25s}
+.domain-chip.active{background:color-mix(in srgb,var(--accent) 10%,#fff);border-color:color-mix(in srgb,var(--accent) 40%,#fff);color:color-mix(in srgb,var(--accent) 84%,#000)}
+.domain-chip.active svg{color:var(--accent)}
+.chip-timer{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--accent);transform-origin:left;animation:chip-timer 7s linear both}
+@keyframes chip-timer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.domain-toggle{flex:none;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);background:#fff;border-radius:50%;color:#7c8a85;transition:.2s}
+.domain-toggle:hover{color:var(--ink);border-color:#b9c6c1}
+
+.domain-hero .trust-row{flex-wrap:wrap;row-gap:10px}
+
+/* Right-hand panel: one shell, five interchangeable block types. */
+.showcase-window{background:var(--shell);border-radius:20px;padding-bottom:20px;box-shadow:20px 24px 0 var(--glow);color:#dae9e3;overflow:hidden;animation:panel-in .55s cubic-bezier(.2,.7,.3,1) both;transition:background .45s,box-shadow .45s}
+@keyframes panel-in{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.showcase-window .window-bar{background:var(--bar);transition:background .45s}
+.showcase-body{padding:28px 30px 22px;display:grid;gap:22px;min-height:236px;align-content:start}
+
+.showcase-code{margin:0;font:14px/2 DM Mono,ui-monospace,monospace;white-space:pre-wrap;word-break:break-word}
+.code-line{display:block;min-height:1.9em}
+.tok{font-style:normal}
+.tok-kw{color:#f39db8}
+.tok-fn{color:#8edac3}
+.tok-var{color:#9db9ff}
+.tok-str{color:#f3ce72}
+.tok-cm{color:#7d918b}
+
+.showcase-meters{display:grid;gap:14px}
+.meter{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font:11px DM Mono,ui-monospace,monospace;color:#a9bdb6}
+.meter b{color:#fff;font-size:12px}
+.meter i{grid-column:1/-1;height:5px;border-radius:5px;background:#ffffff1f;overflow:hidden}
+.meter i::after{content:'';display:block;height:100%;width:var(--pct);border-radius:5px;background:var(--glow);animation:meter-fill .8s cubic-bezier(.2,.7,.3,1) both}
+@keyframes meter-fill{from{transform:scaleX(0);transform-origin:left}to{transform:none}}
+
+.showcase-bars{margin:0}
+.bar-row{display:flex;align-items:flex-end;gap:10px;height:132px}
+.bar-row>span{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px;height:100%}
+.bar-row i{display:block;width:100%;height:var(--pct);border-radius:6px 6px 3px 3px;background:linear-gradient(var(--glow),color-mix(in srgb,var(--glow) 45%,transparent));animation:bar-grow .7s cubic-bezier(.2,.7,.3,1) both}
+@keyframes bar-grow{from{height:0}to{height:var(--pct)}}
+.bar-row small{font:10px DM Mono,ui-monospace,monospace;color:#93a8a2}
+.showcase-bars figcaption{margin-top:14px;font:10px DM Mono,ui-monospace,monospace;color:#93a8a2;letter-spacing:.04em}
+
+.showcase-list{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.showcase-list li{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#ffffff0f;border-radius:9px;padding:11px 13px;font-size:12.5px}
+.tone{font:500 10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;border-radius:20px;white-space:nowrap}
+.tone-ok{background:#2ecf8b26;color:#7fe3b6}
+.tone-warn{background:#ffb54d26;color:#ffcf8f}
+.tone-risk{background:#ff5c7a26;color:#ff9fb2}
+.tone-idle{background:#ffffff14;color:#a9bdb6}
+
+.showcase-swatches{display:flex;flex-wrap:wrap;gap:10px}
+.showcase-swatches span{display:inline-flex;align-items:center;gap:7px;background:#ffffff0f;border-radius:30px;padding:6px 12px 6px 6px;font:10px DM Mono,ui-monospace,monospace;color:#c6d6d1}
+.showcase-swatches i{width:18px;height:18px;border-radius:50%;border:1px solid #ffffff33}
+
+.domain-hero .float-card{top:-22px;right:-24px;animation:lede-in .6s cubic-bezier(.2,.7,.3,1) both}
+.domain-hero .float-card svg{color:var(--accent)}
+
+@media(max-width:900px){
+ .domain-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+ .domain-chips::-webkit-scrollbar{display:none}
+ .domain-chip{white-space:nowrap}
+ .domain-rail{align-items:center}
+ .showcase-window{box-shadow:12px 14px 0 var(--glow)}
+}
+@media(max-width:650px){
+ .showcase-body{padding:22px 20px 18px;min-height:0;gap:18px}
+ .showcase-code{font-size:12.5px}
+ .bar-row{height:104px}
+ .domain-hero .trust-row{font-size:11px;gap:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero-lede,.showcase-window,.domain-hero .float-card,.meter i::after,.bar-row i{animation:none}
+ .chip-timer{display:none}
+}
