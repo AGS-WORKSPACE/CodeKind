@@ -40,9 +40,18 @@ All endpoints return `{ success: boolean, data?: T, message?: string, errors?: u
 | Admin skills | `adminService.skills()` | `GET/POST/PATCH /api/admin/skills` | Skill fields | `{ skill }` or `{ items }` | Admin |
 | Admin learning paths | `adminService.learningPaths()` | `GET/POST/PATCH /api/admin/learning-paths` | Path, module, and lesson fields | `{ learningPath }` | Admin |
 
+## Payments, wallets and appeals
+
+Hourly pricing, per-minute settlement, the session-payment ledger, the 24-hour appeal window and
+multi-currency wallets have their own contract in
+[PAYMENTS_BACKEND_CONTRACT.md](./PAYMENTS_BACKEND_CONTRACT.md), with the reasoning in
+[PAYMENTS_LEDGER_PLAN.md](./PAYMENTS_LEDGER_PLAN.md). Those endpoints supersede the `paymentService`
+and `earningsService` rows above: a learner's charges come from `/api/session-payments`, a tutor's
+balance from their wallet, and withdrawals from `/api/wallets/withdrawals`.
+
 ## Realtime and external integration points
 
 - Messages, presence, typing state, lesson connection state, and collaborative notes expose typed frontend boundaries but need a future WebSocket or realtime transport.
-- Payment controls are presentation-only. A gateway should return tokenized payment method identifiers; raw card details must never pass through the application API.
+- Session money is modelled end to end (escrow, per-minute settlement, appeals, wallets); only wallet funding needs a gateway, which should return tokenized payment method identifiers. Raw card details must never pass through the application API.
 - The lesson editor is ready for a Monaco adapter. Code execution must use an isolated backend sandbox rather than the browser service layer.
 - Calendar buttons need an `.ics` endpoint or provider integration. File controls need an authenticated upload-signing endpoint and attachment record.
