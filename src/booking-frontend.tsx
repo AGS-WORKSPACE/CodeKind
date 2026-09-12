@@ -19,6 +19,13 @@ const CURRENCY:CurrencyCode='USD';
 const availableTimes=['9:00 AM','10:30 AM','1:00 PM','3:30 PM','5:00 PM','7:00 PM','8:30 PM'];
 const dateKey=(date:Date)=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 const prettyDate=(value:string)=>new Intl.DateTimeFormat('en',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).format(new Date(`${value}T12:00:00`));
+/** '2026-09-03' + '3:30 PM' → an ISO instant, so the booked session can be scheduled and joined. */
+const startInstant=(date:string,time:string)=>{
+  const parts=/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
+  if(!parts)return new Date(`${date}T12:00:00`).toISOString();
+  const hour=Number(parts[1])%12+(parts[3]!.toUpperCase()==='PM'?12:0);
+  return new Date(`${date}T${String(hour).padStart(2,'0')}:${parts[2]}:00`).toISOString();
+};
 
 export function FrontendBooking(){
   const{tutorId}=useParams();
@@ -48,7 +55,7 @@ export function FrontendBooking(){
     setBusy(true);
     setError(null);
     try{
-      await ledgerService.create({sessionId:`les-${Date.now()}`,source:'DIRECT_BOOKING',payerId:payer.id,payerType:'USER',payerName:payer.name,payeeId:tutor.id,payeeName:tutor.name,topic:`${type==='TRIAL'?'Trial lesson':'Lesson'} · ${tutor.skills[0]??tutor.speciality}`,currency:CURRENCY,hourlyRate,scheduledMinutes:duration});
+      await ledgerService.create({sessionId:`les-${Date.now().toString(36)}`,source:'DIRECT_BOOKING',payerId:payer.id,payerType:'USER',payerName:payer.name,payeeId:tutor.id,payeeName:tutor.name,topic:`${type==='TRIAL'?'Trial lesson':'Lesson'} with ${tutor.name}`,skill:tutor.skills[0]??tutor.speciality,startsAt:startInstant(selectedDate,time),currency:CURRENCY,hourlyRate,scheduledMinutes:duration});
       toast(`Booking created · ${formatMoney(price,CURRENCY)} held in escrow`);
       setStep(7);
     }catch(problem){setError(problem instanceof Error?problem.message:'The booking could not be created.')}
@@ -67,11 +74,11 @@ export function FrontendBooking(){
         {step===2&&(type==='TRIAL'?<div className="trial-duration"><Sparkles/><div><strong>30-minute trial lesson</strong><p>Trial lessons have one fixed duration so you can meet your tutor and plan what comes next.</p></div><Check/></div>:<Choices value={String(duration)} onChange={value=>setDuration(Number(value) as 30|60)} items={[['30','30 minutes','A focused lesson for one topic or code review.'],['60','60 minutes','Deeper teaching, guided practice, and questions.']]}/>)}
         {step===3&&<BookingCalendar month={visibleMonth} selected={selectedDate} onMonthChange={setVisibleMonth} onSelect={setSelectedDate}/>} 
         {step===4&&<TimeSelection value={time} onChange={setTime}/>} 
-        {step===5&&<div className="review-booking"><Summary tutor={tutor.name} type={type} duration={duration} date={selectedDate} time={time} price={price}/><label className="student-note">Anything your tutor should know?<textarea value={note} onChange={event=>setNote(event.target.value)} placeholder="Share your goals or what you’d like to work on…"/></label></div>} 
+        {step===5&&<div className="review-booking"><Summary tutor={tutor.name} type={type} duration={duration} date={selectedDate} time={time} price={price} rate={hourlyRate}/><label className="student-note">Anything your tutor should know?<textarea value={note} onChange={event=>setNote(event.target.value)} placeholder="Share your goals or what you’d like to work on…"/></label></div>} 
         {step===6&&<Checkout payerId={payer.id} cost={price} hourlyRate={hourlyRate} minutes={duration} error={error}/>}
         <div className="flow-actions">{step>1&&<button className="btn ghost" onClick={goBack}>Back</button>}<button className="btn" onClick={goForward} disabled={busy}>{step===6?(busy?'Holding funds…':`Confirm · ${formatMoney(price,CURRENCY)}`):'Continue'} <ArrowRight/></button></div>
       </section>
-      <aside><TutorMini tutor={tutor}/><hr/>{step===5?<div className="review-total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong><small>You are billed for the minutes actually taught; the rest is returned.</small></div>:<Summary tutor="" type={type} duration={duration} date={selectedDate} time={time} price={price}/>}</aside>
+      <aside><TutorMini tutor={tutor}/><hr/>{step===5?<div className="review-total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong><small>You are billed for the minutes actually taught; the rest is returned.</small></div>:<Summary tutor="" type={type} duration={duration} date={selectedDate} time={time} price={price} rate={hourlyRate}/>}</aside>
     </div>}
   </main>;
 }
@@ -85,7 +92,7 @@ function BookingCalendar({month,selected,onMonthChange,onSelect}:{month:Date;sel
 function TimeSelection({value,onChange}:{value:string;onChange:(value:string)=>void}){return <div className="time-selection"><div className="timezone-row"><Clock/><span><strong>Your timezone</strong>{TIMEZONE} (GMT+1)</span><span><strong>Tutor timezone</strong>America/Toronto (GMT-4)</span></div>{[['Morning',availableTimes.slice(0,2)],['Afternoon',availableTimes.slice(2,5)],['Evening',availableTimes.slice(5)]].map(([label,times])=><div className="time-group" key={label as string}><h3>{label as string}</h3><div>{(times as string[]).map(item=><button type="button" className={value===item?'selected':''} onClick={()=>onChange(item)} key={item}>{item}</button>)}</div></div>)}</div>}
 function Choices({value,onChange,items}:{value:string;onChange:(value:string)=>void;items:string[][]}){return <div className="lesson-types">{items.map((item,index)=><button type="button" className={value===item[0]?'selected':''} onClick={()=>onChange(item[0]!)} key={item[0]}><span>{index?<Code2/>:<Sparkles/>}<strong>{item[1]}</strong></span><p>{item[2]}</p></button>)}</div>}
 function TutorMini({tutor}:{tutor:typeof tutors[number]}){return <div className="tutor-mini"><div className="avatar">{tutor.image}</div><span><strong>{tutor.name}</strong><small>{tutor.headline}</small><Stars rating={tutor.rating}/></span></div>}
-function Summary({tutor,type,duration,date,time,price}:{tutor:string;type:string;duration:number;date:string;time:string;price:number}){return <div className="booking-summary">{tutor&&<p><span>Tutor</span><strong>{tutor}</strong></p>}<p><span>Lesson</span><strong>{type==='TRIAL'?'Trial lesson':'Regular lesson'}</strong></p><p><span>Date and time</span><strong>{prettyDate(date)} · {time}</strong></p><p><span>Duration</span><strong>{duration} minutes</strong></p><p><span>Rate</span><strong>{formatMoney(Math.round(price*60/duration),CURRENCY)} / hour</strong></p><p><span>Timezone</span><strong>{TIMEZONE}</strong></p><p className="total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong></p></div>}
+function Summary({tutor,type,duration,date,time,price,rate}:{tutor:string;type:string;duration:number;date:string;time:string;price:number;rate:number}){return <div className="booking-summary">{tutor&&<p><span>Tutor</span><strong>{tutor}</strong></p>}<p><span>Lesson</span><strong>{type==='TRIAL'?'Trial lesson':'Regular lesson'}</strong></p><p><span>Date and time</span><strong>{prettyDate(date)} · {time}</strong></p><p><span>Duration</span><strong>{duration} minutes</strong></p><p><span>Rate</span><strong>{formatMoney(rate,CURRENCY)} / hour</strong></p><p><span>Timezone</span><strong>{TIMEZONE}</strong></p><p className="total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong></p></div>}
 function Checkout({payerId,cost,hourlyRate,minutes,error}:{payerId:string;cost:number;hourlyRate:number;minutes:number;error:string|null}){
   const wallets=useLoader(()=>walletService.list(payerId),[payerId]);
   const wallet=wallets.data?.find(item=>item.currency===CURRENCY);

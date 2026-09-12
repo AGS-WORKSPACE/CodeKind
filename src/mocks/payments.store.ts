@@ -83,7 +83,10 @@ const seed=():PaymentsStore=>{
  const settledAppeal=openAppeal(store,{sessionPaymentId:settled.id,appellantId:'demo-student',reason:'QUALITY',details:'Most of the session was spent on setup problems rather than the agreed topic.'});
  resolveAppeal(store,settledAppeal.id,{appellantAmount:850,respondentAmount:600,note:'Session was partly delivered. Split between both parties, platform fee waived.',resolvedBy:'Sam Adeyemi'});
 
- escrow(store,{sessionId:'les-1042',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'demo-tutor',payeeName:'David Okafor',topic:'Building reusable React hooks',currency:'USD',hourlyRate:4_200,scheduledMinutes:60});
+ /* Two sessions still in escrow, so the scheduled-session list and the join flow have something
+    to show the moment the preview opens. */
+ escrow(store,{sessionId:'les-1042',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'demo-tutor',payeeName:'David Okafor',topic:'Building reusable React hooks',skill:'React',startsAt:hoursFromNow(2),currency:'USD',hourlyRate:4_200,scheduledMinutes:60});
+ escrow(store,{sessionId:'les-1051',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'maya-chen',payeeName:'Maya Chen',topic:'Component testing with Vitest',skill:'Testing',startsAt:hoursFromNow(26),currency:'USD',hourlyRate:3_800,scheduledMinutes:30});
 
  /* A trainer teaching under an organisation: the earning party is the organisation, so the money
     lands in the org wallet rather than the trainer's own. */
@@ -205,6 +208,8 @@ export type EscrowInput={
  payeeName:string;
  payeeOrgId?:string;
  topic:string;
+ skill?:string;
+ startsAt?:string;
  currency:CurrencyCode;
  hourlyRate:number;
  scheduledMinutes:number;
@@ -234,6 +239,8 @@ export function escrow(store:PaymentsStore,input:EscrowInput):SessionPayment{
   payeeName:input.payeeName,
   payeeOrgId:input.payeeOrgId,
   topic:input.topic,
+  skill:input.skill,
+  startsAt:input.startsAt,
   currency:input.currency,
   hourlyRate:input.hourlyRate,
   scheduledMinutes:input.scheduledMinutes,

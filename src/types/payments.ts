@@ -71,6 +71,10 @@ export type SessionPayment={
  /** Set when the tutor teaches under an organisation, which is then the earning party. */
  payeeOrgId?:string;
  topic:string;
+ /** Subject badge for the session card; the topic alone reads poorly in a list. */
+ skill?:string;
+ /** When the session is scheduled to start. Absent on seeded history that predates scheduling. */
+ startsAt?:string;
  currency:CurrencyCode;
  hourlyRate:number;
  scheduledMinutes:number;

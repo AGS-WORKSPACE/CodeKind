@@ -109,6 +109,10 @@ export const learningAdsRepository={
    payeeId:application.tutorId,
    payeeName:application.tutorName,
    topic:ad.title,
+   skill:ad.skill,
+   /* The ad carries preferred times as free text, so accepting schedules a day out and both sides
+      confirm the exact slot in messages. A real calendar picker replaces this. */
+   startsAt:new Date(Date.now()+86_400_000).toISOString(),
    currency:ad.currency,
    hourlyRate:ad.hourlyRate,
    scheduledMinutes:ad.sessionMinutes,

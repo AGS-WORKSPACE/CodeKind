@@ -151,3 +151,24 @@
  .applicant{flex-wrap:wrap}
  .applicant-actions{justify-items:start}
 }
+
+/* --- Scheduled sessions: the bridge from a booking to the classroom --- */
+.scheduled-panel{margin-top:4px}
+.scheduled-count{font:500 10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.session-list{display:grid;gap:10px}
+.session-card{display:grid;grid-template-columns:auto 1fr auto;gap:15px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:15px 16px;background:#fff}
+.session-info{display:grid;gap:5px;min-width:0}
+.session-tags{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.session-info h4{margin:2px 0 0;font-size:15px}
+.session-info>p{margin:0;font-size:12px;color:var(--muted)}
+.session-meta{display:flex;flex-wrap:wrap;gap:5px 14px;font-size:11px;color:var(--muted)}
+.session-meta span{display:inline-flex;align-items:center;gap:5px}
+.session-escrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#41695a}
+.session-actions{display:grid;gap:7px;justify-items:center;flex:none}
+.session-actions .btn{white-space:nowrap}
+.lobby-escrow{display:flex;align-items:center;gap:8px;font-size:12px;color:#2f5a4a;background:#f4f8f6;border-radius:10px;padding:10px 13px;margin:14px 0 0}
+
+@media(max-width:820px){
+ .session-card{grid-template-columns:auto 1fr;row-gap:12px}
+ .session-actions{grid-column:1/-1;justify-items:stretch}
+}
