@@ -17,4 +17,5 @@ import './styles10.css';
 import './styles12.css';
 import './styles13.css';
 import './styles14.css';
+import './styles15.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><BrowserRouter><AuthProvider><ToastProvider><App/></ToastProvider></AuthProvider></BrowserRouter></React.StrictMode>);
