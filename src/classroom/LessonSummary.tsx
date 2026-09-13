@@ -18,7 +18,14 @@ function useSettledPayment(sessionId:string|undefined,attendedSeconds:number|und
    .then(async found=>{
     if(!found)return null;
     // A session already settled is left alone — reopening the summary must not bill twice.
-    return found.status==='HELD'?ledgerService.settle(found.id,attendedSeconds??found.scheduledMinutes*60):found;
+    if(found.status!=='HELD')return found;
+    try{return await ledgerService.settle(found.id,attendedSeconds??found.scheduledMinutes*60)}
+    catch(problem){
+     // Both sides of a call land here together; if the other one settled first, show that result.
+     const latest=await ledgerService.bySession(sessionId);
+     if(latest&&latest.status!=='HELD')return latest;
+     throw problem;
+    }
    })
    .then(result=>{if(live)setPayment(result)})
    .catch(problem=>{if(live)setError(problem instanceof Error?problem.message:'The session payment could not be settled.')});
@@ -53,14 +60,16 @@ function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:
 export function LessonSummary(){
  const{bookingId}=useParams();
  const{state}=useLocation();
- const attendedSeconds=(state as{attendedSeconds?:number}|null)?.attendedSeconds;
- const[tutorMode,setTutorMode]=useState(false);
+ const{attendedSeconds,view}=(state as{attendedSeconds?:number;view?:'tutor'|'learner'}|null)??{};
+ // The room says which side you were on, so a tutor lands on the tutor summary.
+ const[tutorMode,setTutorMode]=useState(view==='tutor');
  const{payment,error}=useSettledPayment(bookingId,attendedSeconds);
  return <main className="lesson-summary">
   <header><Link to="/">⌘ pairlore</Link><button onClick={()=>setTutorMode(!tutorMode)}>Preview {tutorMode?'student':'tutor'} view</button></header>
-  {tutorMode?<TutorSummary billing={<SessionBilling payment={payment} error={error} view="tutor"/>}/>:<StudentSummary billing={<SessionBilling payment={payment} error={error} view="student"/>}/>}
+  {tutorMode?<TutorSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="tutor"/>}/>:<StudentSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="student"/>}/>}
  </main>;
 }
-function StudentSummary({billing}:{billing:React.ReactNode}){return <section><div className="summary-check"><Check/></div><span className="eyebrow">LESSON COMPLETE</span><h1>Great work today, David!</h1><p>You completed a 60-minute lesson with Sarah Chen.</p><div className="summary-meta"><span><CalendarDays/> Sep 3, 2026</span><span><Clock/> 60 minutes</span><span><BookOpen/> JavaScript Array Methods</span></div><SummaryContent/>{billing}<div className="summary-actions"><button className="btn"><Star/> Leave a review</button><button className="btn ghost">Book another lesson</button><button className="btn ghost"><MessageCircle/> Message Sarah</button><Link className="text-link" to="/student/dashboard">Return to dashboard</Link></div></section>}
-function TutorSummary({billing}:{billing:React.ReactNode}){return <section><span className="eyebrow">COMPLETE LESSON SUMMARY</span><h1>How did David do?</h1><p>Save a summary for the student and your private teaching records.</p>{billing}<form className="tutor-summary-form"><label>Topics covered<textarea defaultValue="filter(), callback predicates, pure functions, and edge cases"/></label><label>Student performance<select><option>Great progress</option><option>On track</option><option>Needs support</option></select></label><label>Areas to improve<textarea defaultValue="Practice recognizing empty input and validating function parameters."/></label><label>Homework<textarea defaultValue="Complete the active users exercise and add two edge-case tests."/></label><label>Private tutor notes<textarea placeholder="Only you can see these notes…"/></label><div><button type="button" className="btn ghost">Assign homework</button><button type="button" className="btn ghost">Schedule next lesson</button><button type="button" className="btn">Save summary</button></div></form></section>}
+const first=(name:string|undefined)=>name?.split(' ')[0];
+function StudentSummary({payment,billing}:{payment:SessionPayment|null;billing:React.ReactNode}){const minutes=payment?.billedMinutes??payment?.scheduledMinutes??60;const tutor=payment?.payeeName??'Sarah Chen';return <section><div className="summary-check"><Check/></div><span className="eyebrow">LESSON COMPLETE</span><h1>Great work today{payment?`, ${first(payment.payerName)}`:''}!</h1><p>You completed a {minutes}-minute lesson with {tutor}.</p><div className="summary-meta"><span><CalendarDays/> {new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}</span><span><Clock/> {minutes} minutes</span><span><BookOpen/> {payment?.topic??'JavaScript Array Methods'}</span></div><SummaryContent/>{billing}<div className="summary-actions"><button className="btn"><Star/> Leave a review</button><button className="btn ghost">Book another lesson</button><button className="btn ghost"><MessageCircle/> Message {first(tutor)}</button><Link className="text-link" to="/student/dashboard">Return to dashboard</Link></div></section>}
+function TutorSummary({payment,billing}:{payment:SessionPayment|null;billing:React.ReactNode}){return <section><span className="eyebrow">COMPLETE LESSON SUMMARY</span><h1>How did {first(payment?.payerName)??'your learner'} do?</h1><p>Save a summary for the student and your private teaching records.</p>{billing}<form className="tutor-summary-form"><label>Topics covered<textarea defaultValue="filter(), callback predicates, pure functions, and edge cases"/></label><label>Student performance<select><option>Great progress</option><option>On track</option><option>Needs support</option></select></label><label>Areas to improve<textarea defaultValue="Practice recognizing empty input and validating function parameters."/></label><label>Homework<textarea defaultValue="Complete the active users exercise and add two edge-case tests."/></label><label>Private tutor notes<textarea placeholder="Only you can see these notes…"/></label><div><button type="button" className="btn ghost">Assign homework</button><button type="button" className="btn ghost">Schedule next lesson</button><button type="button" className="btn">Save summary</button></div></form></section>}
 function SummaryContent(){return <div className="summary-content"><article><h2>What we covered</h2><ul><li>How filter() evaluates each array item</li><li>Writing clear predicate callbacks</li><li>Keeping transformations immutable</li></ul></article><article><h2>Homework</h2><p>Complete the active users exercise and add two edge-case tests before your next lesson.</p></article><article><h2>Resources</h2><a href="#"><Download/> Array methods cheatsheet.pdf</a><a href="#"><BookOpen/> MDN Array.prototype.filter()</a></article></div>}

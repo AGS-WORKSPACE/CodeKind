@@ -9,7 +9,7 @@ const normalise=(text:string)=>text.normalize('NFD').replace(/\p{Diacritic}/gu,'
 const words=(text:string)=>text.split(/[\s/()-]+/).filter(Boolean);
 
 /** Every query word must appear; labels that start with the query rank first, then word starts. */
-function search(options:SearchOption[],query:string){
+export function searchOptions(options:SearchOption[],query:string){
  const q=normalise(query.trim());if(!q)return options;
  const terms=words(q);
  return options.map(option=>{const label=normalise(option.label);if(!terms.every(t=>label.includes(t)))return null;return{option,rank:label.startsWith(q)?0:words(label).some(w=>w.startsWith(terms[0]!))?1:2}})
@@ -29,7 +29,7 @@ export function SearchSelect({label,options,placeholder='Select…',value:contro
  const[open,setOpen]=useState(false);const[query,setQuery]=useState('');const[active,setActive]=useState(0);
  const listRef=useRef<HTMLUListElement>(null);
  const selected=options.find(o=>o.value===value);
- const matches=useMemo(()=>search(options,query),[options,query]);
+ const matches=useMemo(()=>searchOptions(options,query),[options,query]);
  const show=()=>{setOpen(true);setQuery('');setActive(Math.max(0,options.findIndex(o=>o.value===value)))};
  const close=()=>{setOpen(false);setQuery('')};
  const pick=(option:SearchOption|undefined)=>{if(option){setUncontrolled(option.value);onChange?.(option.value)}close()};

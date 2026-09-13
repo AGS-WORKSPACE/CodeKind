@@ -1,6 +1,6 @@
 import type{Tutor}from'../types';import{paths,skills as featuredSkills,tutors as mockTutors}from'../data/mock';import{api,offlineFallback}from'./api';
 export type Skill={id:string;name:string};
-export type TutorApplication={firstName:string;lastName:string;country:string;timezone:string;headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;avatar:null;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;hourlyRate:number;trialRate:number;languages:string[];skills:{skillId:string;yearsExperience:number;skillLevel:'EXPERT';isPrimary:boolean}[];availability:Record<string,{start:string;end:string}[]>};
+export type TutorApplication={firstName:string;lastName:string;country:string;timezone:string;headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;avatar:null;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;hourlyRate:number;trialRate:number;languages:string[];skills:{skillId:string;yearsExperience:number;skillLevel:'EXPERT';isPrimary:boolean}[]};
 // Offline, the catalogue is every skill the demo data already teaches, across all domains.
 const offlineSkills=():Skill[]=>[...new Set([...featuredSkills.map(s=>s.name),...mockTutors.flatMap(t=>t.skills),...paths.flatMap(p=>p.skills)])].sort((a,b)=>a.localeCompare(b)).map(name=>({id:name.toLowerCase().replace(/[^a-z0-9+#]+/g,'-'),name}));
 const APPLICATION_KEY='pairlore.tutor-application';

@@ -29,6 +29,8 @@ All endpoints return `{ success: boolean, data?: T, message?: string, errors?: u
 | Create review | `reviewService.create()` | `POST /api/lessons/:lessonId/review` | `{ rating, writtenReview, teachingQuality, communication, knowledge }` | `{ review }` | Student participant |
 | Student settings | `studentService.updateSettings()` | `PATCH /api/students/me` | Profile and preference fields | `{ student }` | Student |
 | Tutor settings | `tutorService.updateProfile()` | `PATCH /api/tutors/me` | Tutor profile fields | `{ tutor }` | Tutor |
+| Skills catalogue | `tutorService.skills()` | `GET /api/skills` | — | `{ skills: { id, name }[] }` | Public |
+| Tutor application | `tutorService.submitOnboarding()` | `PUT /api/tutors/onboarding` | `{ firstName, lastName, country, timezone, headline, bio, yearsOfExperience, teachingExperience, githubUrl?, portfolioUrl?, linkedinUrl?, hourlyRate, trialRate, languages, skills: { skillId, yearsExperience, skillLevel, isPrimary }[] }`. No availability: tutors commit to times per session, not a weekly schedule. | `{ tutor }` | Tutor |
 | Tutor availability | `availabilityService.update()` | `PUT /api/tutors/me/availability` | `{ timezone, weeklyPeriods, blockedDates, exceptions }` | `{ availability }` | Tutor |
 | Payment methods | `paymentService.methods()` | `GET /api/payments/methods` | — | `{ items: PaymentMethod[] }` | Student |
 | Transactions | `paymentService.transactions()` | `GET /api/payments/transactions` | Query: page, status | `{ items: Transaction[], pagination }` | Authenticated owner |
