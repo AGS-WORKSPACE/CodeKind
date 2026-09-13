@@ -43,7 +43,7 @@ Expected response:
 ```json
 {
   "status": "SUCCESS",
-  "stdout": ["Hello Codekind"],
+  "stdout": ["Hello Pairlore"],
   "stderr": [],
   "executionTime": 142,
   "exitCode": 0

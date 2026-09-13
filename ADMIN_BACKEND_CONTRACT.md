@@ -1,4 +1,4 @@
-# Codekind admin frontend/backend contract
+# Pairlore admin frontend/backend contract
 
 The admin control centre is frontend-only. The backend developer can connect it through these suggested contracts. Responses should use a consistent envelope containing success, data, optional message, and optional errors.
 

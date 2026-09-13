@@ -1,4 +1,4 @@
-# codekind
+# pairlore
 
 Programming tutoring marketplace frontend built with React, TypeScript, and Vite.
 

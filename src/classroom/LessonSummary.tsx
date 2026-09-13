@@ -57,7 +57,7 @@ export function LessonSummary(){
  const[tutorMode,setTutorMode]=useState(false);
  const{payment,error}=useSettledPayment(bookingId,attendedSeconds);
  return <main className="lesson-summary">
-  <header><Link to="/">⌘ codekind</Link><button onClick={()=>setTutorMode(!tutorMode)}>Preview {tutorMode?'student':'tutor'} view</button></header>
+  <header><Link to="/">⌘ pairlore</Link><button onClick={()=>setTutorMode(!tutorMode)}>Preview {tutorMode?'student':'tutor'} view</button></header>
   {tutorMode?<TutorSummary billing={<SessionBilling payment={payment} error={error} view="tutor"/>}/>:<StudentSummary billing={<SessionBilling payment={payment} error={error} view="student"/>}/>}
  </main>;
 }

@@ -1,4 +1,4 @@
-# Codekind frontend QA report
+# Pairlore frontend QA report
 
 ## Pages reviewed
 
