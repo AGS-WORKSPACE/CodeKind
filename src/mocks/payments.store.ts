@@ -8,7 +8,7 @@ import{assertSameCurrency,billableMinutes,graceDeadline,prorate,splitFee}from'..
  * payment, or a maturity that pays a tutor twice, would be worse than no preview at all. The
  * repositories in the sibling files are thin views over the operations here.
  */
-const KEY='codekind.payments';
+const KEY='pairlore.payments';
 const wait=<T>(value:T,ms=220)=>new Promise<T>(resolve=>setTimeout(()=>resolve(structuredClone(value)),ms));
 const uid=(prefix:string)=>`${prefix}-${Math.random().toString(36).slice(2,10)}`;
 const now=()=>new Date().toISOString();

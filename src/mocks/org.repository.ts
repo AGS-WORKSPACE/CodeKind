@@ -1,7 +1,7 @@
 import type{InvitePreview,OrgInvite,OrgMember,Organization}from'../types/org';
 /* Offline stand-in for /organisations/*. Persisted so an invite link still resolves after the
    invited trainer opens it in a new tab, which is the whole point of the flow. */
-const KEY='codekind.orgs';
+const KEY='pairlore.orgs';
 const wait=<T>(value:T,ms=240)=>new Promise<T>(resolve=>setTimeout(()=>resolve(value),ms));
 const uid=(prefix:string)=>`${prefix}-${Math.random().toString(36).slice(2,10)}`;
 

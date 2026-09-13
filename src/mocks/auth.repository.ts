@@ -2,7 +2,7 @@ import type{AccountType,Role,SessionUser}from'../services/auth.service';
 import{orgRepository}from'./org.repository';
 /* Offline stand-in for /auth/*. Used only when the API is unreachable, so it disappears
    on its own once a backend is running. The session survives a refresh via localStorage. */
-const KEY='codekind.session';
+const KEY='pairlore.session';
 const wait=<T>(value:T,ms=260)=>new Promise<T>(resolve=>setTimeout(()=>resolve(value),ms));
 
 /** Signing in with one of these picks that workspace. Any password is accepted. */
