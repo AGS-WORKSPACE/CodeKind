@@ -7,3 +7,13 @@
 .apply-options p{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 4px}
 .apply-options ol{list-style:decimal;margin:4px 0 18px;padding-left:18px;display:grid;gap:6px;font-size:12px;line-height:1.5}
 .apply-options li::marker{font:500 11px DM Mono,monospace;color:#43a37b}
+.search-select{position:relative;display:block}
+.search-select input[role=combobox]{width:100%;box-sizing:border-box;padding-right:38px;cursor:pointer}
+.search-select input[role=combobox]:focus{cursor:text}
+.search-select-chevron{position:absolute;right:12px;top:50%;width:16px;height:16px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search-select ul{position:absolute;z-index:30;top:calc(100% + 4px);left:0;right:0;max-height:264px;overflow-y:auto;margin:0;padding:4px;list-style:none;background:white;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(16,40,32,.12)}
+.search-select li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:6px;font:500 13px/1.35 inherit;color:var(--ink);text-transform:none;letter-spacing:normal;cursor:pointer}
+.search-select li.active{background:#eef7f2}
+.search-select li[aria-selected=true]{color:#2f8f68;font-weight:700}
+.search-select li svg{width:15px;height:15px;flex:none}
+.search-select li.search-select-empty{color:var(--muted);cursor:default;background:none}
