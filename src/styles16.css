@@ -1,0 +1,1306 @@
+.filters {
+  max-height: var(--filters-max-height, calc(100dvh - 119px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 650px) {
+  .filters {
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+  }
+}
+
+/* Assignment cards: compact, balanced content and clearer metadata. */
+.dash-main .assignment-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.dash-main .assignment-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 4%);
+}
+
+.dash-main .assignment-card > .assignment-card-copy {
+  display: block;
+  min-width: 0;
+  margin: 0;
+}
+
+.assignment-card-copy > .status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 5px 10px;
+}
+
+.assignment-card-copy > h3 {
+  margin: 14px 0 5px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.assignment-card-copy > p {
+  min-height: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.assignment-card .assignment-card-meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf1ee;
+  color: #52645e;
+  font-size: 9px;
+}
+
+.assignment-card-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.assignment-card-meta > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.assignment-card-meta > span:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.assignment-card-meta strong {
+  color: #7a8984;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.assignment-card-meta > span:last-child strong {
+  display: none;
+}
+
+.assignment-card-meta svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.dash-main .assignment-card > .btn {
+  align-self: flex-start;
+  width: auto;
+  min-width: 126px;
+}
+
+@media (max-width: 1050px) {
+  .dash-main .assignment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .dash-main .assignment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-main .assignment-card {
+    padding: 17px;
+  }
+
+  .assignment-card .assignment-card-meta {
+    margin-top: 18px;
+  }
+
+  .dash-main .assignment-card > .btn {
+    width: 100%;
+  }
+}
+
+.lobby-layout {
+  align-items: stretch;
+}
+
+.device-preview {
+  align-self: stretch;
+  min-height: 0;
+}
+
+.device-preview > div:first-child {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+}
+
+.preview-off {
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 90px 24px 110px;
+  text-align: center;
+}
+
+.preview-off .preview-avatar {
+  flex: none;
+}
+
+.preview-off > svg {
+  width: 30px;
+  height: 30px;
+  margin-top: 4px;
+}
+
+.preview-off > strong {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.preview-controls {
+  z-index: 1;
+}
+
+.preview-active > span {
+  bottom: 76px;
+}
+
+.preview-controls button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 25%);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.preview-controls button:hover {
+  background: #3b5149;
+  transform: translateY(-1px);
+}
+
+.preview-controls button.off:hover {
+  background: #bd554e;
+}
+
+.preview-controls button:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1000px) {
+  .device-preview > div:first-child {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 700px) {
+  .device-preview {
+    align-self: auto;
+  }
+
+  .device-preview > div:first-child {
+    height: 300px;
+    min-height: 300px;
+  }
+
+  .preview-off {
+    padding: 52px 20px 72px;
+  }
+
+  .preview-off .preview-avatar {
+    width: 84px;
+    height: 84px;
+  }
+}
+
+.section-spaced-stats {
+  margin-bottom: 18px;
+}
+
+/* Settings: balanced navigation, readable form width, and compact controls. */
+.workspace-title:has(+ .settings-layout) {
+  max-width: 1180px;
+  margin: 38px auto 28px;
+  align-items: flex-start;
+}
+
+.workspace-title:has(+ .settings-layout) > div:first-child {
+  display: block;
+}
+
+.workspace-title:has(+ .settings-layout) h1 {
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.workspace-title:has(+ .settings-layout) p {
+  max-width: 640px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.settings-layout {
+  grid-template-columns: 220px minmax(0, 936px);
+  align-items: start;
+  gap: 24px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.settings-layout > nav {
+  position: sticky;
+  top: 84px;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.settings-layout > nav button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 10px;
+  letter-spacing: .02em;
+}
+
+.settings-layout > nav button.active {
+  background: #e8f4ec;
+  box-shadow: inset 3px 0 #3f9b73;
+}
+
+.settings-form {
+  gap: 18px;
+  padding: 28px;
+}
+
+.settings-form .two {
+  gap: 16px;
+}
+
+.settings-form label {
+  gap: 8px;
+  font-size: 12px;
+}
+
+.settings-form input,
+.settings-form select {
+  height: 46px;
+  min-height: 46px;
+  padding-inline: 15px;
+  font-size: 12px;
+}
+
+.settings-form textarea {
+  min-height: 116px;
+  padding: 14px 15px;
+  font-size: 12px;
+}
+
+.settings-avatar {
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.settings-avatar .avatar {
+  width: 62px;
+  height: 62px;
+}
+
+.settings-form > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+.settings-section-head {
+  padding-bottom: 18px;
+  margin-bottom: 2px;
+}
+
+.settings-section-head h2 {
+  font-size: 20px;
+}
+
+.settings-section-head p {
+  font-size: 12px;
+}
+
+.settings-toggles > label {
+  min-height: 72px;
+  padding: 16px 18px;
+  cursor: pointer;
+}
+
+.settings-toggles strong {
+  font-size: 12px;
+}
+
+.settings-toggles small {
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.settings-form .settings-toggles input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  width: 42px;
+  min-width: 42px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd7d1;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.settings-form .settings-toggles input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(16 37 31 / 22%);
+  transition: transform 160ms ease;
+}
+
+.settings-form .settings-toggles input[type="checkbox"]:checked {
+  background: #328662;
+}
+
+.settings-form .settings-toggles input[type="checkbox"]:checked::before {
+  transform: translateX(18px);
+}
+
+.settings-form .settings-toggles input[type="checkbox"]:focus {
+  border: 0;
+  outline: 3px solid #bfe5d0;
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .settings-layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+}
+
+/* Shared workspace buttons, based on the compact wallet actions. */
+.dash-main .btn {
+  min-height: 40px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 8%);
+}
+
+.dash-main .btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke-width: 1.9;
+}
+
+.dash-main .btn.ghost {
+  border-color: #d6e0db;
+  background: #fff;
+  color: var(--ink);
+}
+
+.dash-main .btn.ghost:hover {
+  border-color: #aec2b8;
+  background: #f8fbf9;
+}
+
+.dash-main .btn:disabled {
+  opacity: .55;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.dash-main .workspace-title .btn,
+.dash-main .dash-welcome > .btn,
+.dash-main .dash-welcome > a.btn,
+.dash-main .dash-welcome .wallet-head-actions .btn {
+  min-height: 42px;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+
+.dash-main .lesson-actions .btn,
+.dash-main .relationship-actions .btn,
+.dash-main .assignment-grid .btn,
+.dash-main .report-grid .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 10px;
+}
+
+/* Tutor calendar toolbar and date headers. */
+.calendar-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin: 4px 0 14px;
+}
+
+.calendar-toolbar .workspace-tabs {
+  display: inline-flex;
+  justify-self: start;
+  gap: 3px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #eaf0ec;
+}
+
+.calendar-toolbar .workspace-tabs button {
+  min-width: 68px;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  color: #63736d;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+.calendar-toolbar .workspace-tabs button:hover {
+  background: #f7faf8;
+  color: var(--ink);
+}
+
+.calendar-toolbar .workspace-tabs button.active {
+  border: 0;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgb(16 37 31 / 12%);
+}
+
+.calendar-period {
+  justify-self: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334941;
+  white-space: nowrap;
+}
+
+.calendar-nav {
+  display: inline-flex;
+  justify-self: end;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 6%);
+}
+
+.calendar-nav button {
+  min-width: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0 13px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calendar-nav button:last-child {
+  border-right: 0;
+}
+
+.calendar-nav button:hover {
+  background: #f2f7f4;
+}
+
+.calendar-nav svg {
+  width: 16px;
+  height: 16px;
+}
+
+.week-calendar {
+  margin-top: 0;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 4%);
+}
+
+.calendar-day > strong {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  color: #53665f;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.calendar-day > strong span {
+  font-weight: 600;
+}
+
+.calendar-day > strong b {
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.calendar-day.today > strong b {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+}
+
+.time-axis {
+  padding-top: 44px;
+}
+
+.time-axis span {
+  padding-left: 11px;
+  font-size: 8px;
+}
+
+@media (max-width: 820px) {
+  .calendar-toolbar {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .calendar-period {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 650px) {
+  .calendar-toolbar {
+    display: grid;
+  }
+
+  .calendar-toolbar .workspace-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .calendar-toolbar .workspace-tabs button {
+    min-width: 58px;
+    padding-inline: 8px;
+  }
+
+  .calendar-toolbar > .calendar-period {
+    display: block;
+  }
+}
+
+/* Booking confirmation: compact spacing and wallet-style actions. */
+.booking-seven .booking-steps {
+  margin: 24px 0 24px;
+}
+
+.booking-confirmation {
+  max-width: 680px;
+  margin: 0 auto 52px;
+  padding: 36px 40px 40px;
+  border-radius: 17px;
+}
+
+.booking-confirmation .success-icon {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 16px;
+}
+
+.booking-confirmation .success-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.booking-confirmation > .eyebrow {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.booking-confirmation > h1 {
+  margin: 0 0 8px;
+  font-size: 31px;
+  line-height: 1.12;
+  letter-spacing: -1.3px;
+}
+
+.booking-confirmation > p:not(.escrow-note) {
+  margin: 0 auto 20px;
+  max-width: 54ch;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.booking-confirmation .confirmation-card {
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+}
+
+.booking-confirmation .confirmation-card h3 {
+  font-size: 15px;
+}
+
+.booking-confirmation .confirmation-card p {
+  font-size: 12px;
+}
+
+.booking-confirmation .confirmation-card span {
+  margin-top: 5px;
+  font-size: 9px;
+}
+
+.booking-confirmation .escrow-note {
+  justify-content: center;
+  margin: 0 0 18px;
+  padding: 12px 15px;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.booking-confirmation .confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+}
+
+.booking-confirmation .confirmation-actions .btn,
+.booking-confirmation .confirmation-actions .btn:last-child {
+  grid-column: auto;
+  width: auto;
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 8%);
+}
+
+.booking-confirmation .confirmation-actions .btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke-width: 1.9;
+}
+
+.booking-confirmation .confirmation-actions .btn.ghost {
+  border-color: #d6e0db;
+  background: #fff;
+}
+
+@media (max-width: 650px) {
+  .booking-seven .booking-steps {
+    margin-block: 18px;
+  }
+
+  .booking-confirmation {
+    margin: 0 auto 30px;
+    padding: 28px 18px;
+  }
+
+  .booking-confirmation .confirmation-card {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .booking-confirmation .confirmation-actions {
+    flex-direction: column;
+  }
+
+  .booking-confirmation .confirmation-actions .btn,
+  .booking-confirmation .confirmation-actions .btn:last-child {
+    width: 100%;
+  }
+}
+
+/* Booking flow actions: match the compact wallet button system. */
+.booking-flow .flow-actions {
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.booking-flow .flow-actions .btn {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 8%);
+}
+
+.booking-flow .flow-actions .btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke-width: 1.9;
+}
+
+.booking-flow .flow-actions .btn.ghost {
+  border-color: #d6e0db;
+  background: #fff;
+  color: var(--ink);
+}
+
+.booking-flow .flow-actions .btn.ghost:hover {
+  border-color: #aec2b8;
+  background: #f8fbf9;
+}
+
+.booking-flow .full-calendar > header button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #d6e0db;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.booking-flow .full-calendar > header button:hover,
+.booking-flow .time-group button:hover {
+  border-color: #aec2b8;
+  background: #f8fbf9;
+}
+
+.booking-flow .full-calendar > header button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.booking-flow .time-group button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgb(16 37 31 / 5%);
+}
+
+.booking-flow .time-group button.selected,
+.booking-flow .time-group button.selected:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Tutor students: denser rows without losing scannability. */
+.dash-main .student-table {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.dash-main .student-table article {
+  min-height: 66px;
+  grid-template-columns: 42px minmax(140px, 1.1fr) minmax(160px, 1.5fr) minmax(100px, .7fr) minmax(105px, .8fr) 32px;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dash-main .student-table article:last-child {
+  border-bottom: 0;
+}
+
+.dash-main .student-table .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.dash-main .student-table h3 {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.dash-main .student-table p,
+.dash-main .student-table span {
+  margin: 2px 0 0;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.dash-main .student-table span small {
+  margin-bottom: 2px;
+  font-size: 8px;
+}
+
+.dash-main .student-table .mini-progress {
+  height: 5px;
+}
+
+.dash-main .student-table article > button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border-radius: 8px;
+  color: #53665f;
+  cursor: pointer;
+}
+
+.dash-main .student-table article > button:hover {
+  background: #eef4f0;
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .dash-main .student-table article {
+    grid-template-columns: 42px minmax(130px, 1fr) minmax(140px, 1fr) 32px;
+  }
+}
+
+@media (max-width: 650px) {
+  .booking-flow .flow-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .booking-flow .flow-actions .btn:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .booking-flow .flow-actions .btn {
+    width: 100%;
+  }
+
+  .dash-main .student-table article {
+    min-height: 60px;
+    grid-template-columns: 38px minmax(0, 1fr) 30px;
+    padding: 9px 11px;
+  }
+
+  .dash-main .student-table .avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 650px) {
+  .workspace-title:has(+ .settings-layout) {
+    margin-block: 28px 20px;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .settings-layout > nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .settings-layout > nav button {
+    flex: none;
+    min-height: 40px;
+  }
+
+  .settings-layout > nav button.active {
+    box-shadow: inset 0 -3px #3f9b73;
+  }
+
+  .settings-form {
+    padding: 20px;
+  }
+
+  .settings-form > .btn {
+    width: 100%;
+  }
+}
+
+/* Wallet: keep the actions, cards and ledger compact and usable at dashboard scale. */
+.wallet-page-head {
+  align-items: flex-end;
+  gap: 24px;
+  margin-block: 38px 26px;
+}
+
+.wallet-page-head h1 {
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -1.4px;
+}
+
+.wallet-page-head p {
+  max-width: 720px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.wallet-head-actions .btn {
+  min-height: 42px;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+
+.wallet-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 300px));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.wallet-card {
+  min-height: 190px;
+  padding: 20px;
+  gap: 10px;
+}
+
+.wallet-card h2 {
+  margin-top: 3px;
+  font-size: 27px;
+}
+
+.wallet-card footer {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin: 5px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #e8efeb;
+  background: transparent;
+  color: inherit;
+}
+
+.wallet-card footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #2f7258;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wallet-card footer button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.wallet-card footer button:disabled {
+  color: #9aa8a3;
+  cursor: help;
+}
+
+.wallet-card.add {
+  min-height: 190px;
+  padding: 24px;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+}
+
+.wallet-card.add strong,
+.wallet-card.add span {
+  width: 100%;
+  max-width: 220px;
+  text-align: center;
+}
+
+.wallet-panel {
+  gap: 18px;
+  padding: 22px;
+}
+
+.wallet-panel .panel-head {
+  margin-bottom: 0;
+}
+
+.wallet-panel .panel-head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.wallet-panel h3,
+.wallet-panel .panel-head h3 {
+  font-size: 16px;
+}
+
+.wallet-activity-count {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.wallet-table-tools {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.wallet-table-tools label {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.wallet-table-tools input,
+.wallet-table-tools select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 12px;
+  outline: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wallet-table-tools select {
+  appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2366736f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-size: 14px;
+}
+
+.wallet-table-tools input:focus,
+.wallet-table-tools select:focus {
+  border-color: #79b99b;
+  box-shadow: 0 0 0 3px #e4f4eb;
+}
+
+.wallet-table-tools .wallet-table-search {
+  position: relative;
+  min-width: 0;
+}
+
+.wallet-table-search svg {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  color: #789087;
+  pointer-events: none;
+}
+
+.wallet-table-search input {
+  padding-left: 36px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wallet-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5ece8;
+  border-radius: 11px;
+}
+
+.wallet-table-wrap .ledger-table {
+  min-width: 820px;
+}
+
+.wallet-table-wrap .ledger-table th {
+  padding: 11px 14px;
+  background: #f6f9f7;
+  color: #70817b;
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+
+.wallet-table-wrap .ledger-table td {
+  padding: 13px 14px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.wallet-table-wrap .ledger-table td:first-child {
+  width: 42%;
+}
+
+.wallet-table-wrap .ledger-table td strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.wallet-table-wrap .ledger-table td > span:not(.org-tag) {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.wallet-table-wrap .ledger-table .org-tag {
+  display: inline-flex;
+  min-width: 126px;
+  justify-content: flex-start;
+  padding: 5px 9px;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.wallet-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.wallet-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wallet-pagination button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wallet-pagination button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.wallet-pagination button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+@media (max-width: 820px) {
+  .wallet-page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wallet-table-tools {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wallet-table-search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 650px) {
+  .wallet-head-actions,
+  .wallet-head-actions .btn {
+    width: 100%;
+  }
+
+  .wallet-grid,
+  .wallet-table-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-table-search {
+    grid-column: auto;
+  }
+
+  .wallet-panel {
+    padding: 16px;
+  }
+
+  .wallet-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Collapsed dashboard navigation: keep the active label beneath its icon. */
+@media (max-width: 900px) {
+  .sidebar nav a,
+  .sidebar nav a:not(.active) {
+    min-height: 42px;
+    justify-content: center;
+    padding: 9px 3px;
+    font-size: 0;
+  }
+
+  .sidebar nav a.active {
+    min-height: 50px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 3px;
+    font-size: 7px;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .sidebar nav a.active > span {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+}

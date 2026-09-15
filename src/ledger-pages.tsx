@@ -65,7 +65,7 @@ export function SessionPaymentsPage({role}:{role:WorkspaceRole}){
    </div>
   </div>
 
-  <div className="stats-grid">
+  <div className="stats-grid section-spaced-stats">
    {payee?<>
     <StatCard label="Pending" value={formatMoney(totals.reduce((s,t)=>s+t.pending,0),totals[0]?.currency??currency)} trend="Clears after the grace period" icon={<Clock/>}/>
     <StatCard label="Frozen by appeals" value={formatMoney(totals.reduce((s,t)=>s+t.flagged,0),totals[0]?.currency??currency)} trend="Awaiting a decision" icon={<Flag/>}/>

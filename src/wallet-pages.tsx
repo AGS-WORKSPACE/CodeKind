@@ -1,5 +1,5 @@
 import{useMemo,useState}from'react';
-import{ArrowDownLeft,ArrowUpRight,Banknote,Landmark,Lock,Plus,RefreshCw,Wallet as WalletIcon}from'lucide-react';
+import{ArrowDownLeft,ArrowUpRight,Banknote,ChevronLeft,ChevronRight,Landmark,Lock,Plus,RefreshCw,Search,Wallet as WalletIcon}from'lucide-react';
 import{DashboardShell}from'./components';
 import{useToast}from'./ui-feedback';
 import{useLoader,useOwner,type Owner,type WorkspaceRole}from'./hooks/use-payments';
@@ -11,12 +11,16 @@ const entryLabel:Record<WalletEntry['kind'],string>={
  TOPUP:'Top-up',WITHDRAWAL:'Withdrawal',HOLD:'Escrow held',RELEASE:'Escrow returned',CAPTURE:'Session charge',
  SESSION_EARNING:'Session earning',PLATFORM_FEE:'Platform fee',APPEAL_SETTLEMENT:'Appeal settlement',REFUND:'Refund',ADJUSTMENT:'Adjustment',
 };
+const WALLET_PAGE_SIZE=8;
 
 export function WalletPage({role}:{role:WorkspaceRole}){
  const owner=useOwner(role);
  const toast=useToast();
  const[dialog,setDialog]=useState<'TOPUP'|'WITHDRAW'|'ADD_CURRENCY'|null>(null);
  const[filter,setFilter]=useState<CurrencyCode|'ALL'>('ALL');
+ const[typeFilter,setTypeFilter]=useState<WalletEntry['kind']|'ALL'>('ALL');
+ const[query,setQuery]=useState('');
+ const[page,setPage]=useState(1);
 
  const wallets=useLoader(()=>walletService.list(owner.ownerId),[owner.ownerId]);
  const entries=useLoader(()=>walletService.entries(owner.ownerId),[owner.ownerId]);
@@ -24,11 +28,21 @@ export function WalletPage({role}:{role:WorkspaceRole}){
  const refresh=()=>Promise.all([wallets.reload(),entries.reload(),withdrawals.reload()]);
 
  const held=wallets.data??[];
- const visible=useMemo(()=>filter==='ALL'?(entries.data??[]):(entries.data??[]).filter(e=>e.currency===filter),[entries.data,filter]);
+ const visible=useMemo(()=>{
+  const term=query.trim().toLowerCase();
+  return (entries.data??[])
+   .filter(entry=>filter==='ALL'||entry.currency===filter)
+   .filter(entry=>typeFilter==='ALL'||entry.kind===typeFilter)
+   .filter(entry=>!term||`${entry.description} ${entry.reference?.type??''} ${entry.reference?.id??''} ${entryLabel[entry.kind]}`.toLowerCase().includes(term));
+ },[entries.data,filter,typeFilter,query]);
+ const entryTypes=useMemo(()=>[...new Set((entries.data??[]).map(entry=>entry.kind))].sort((a,b)=>entryLabel[a].localeCompare(entryLabel[b])),[entries.data]);
+ const pageCount=Math.max(1,Math.ceil(visible.length/WALLET_PAGE_SIZE));
+ const currentPage=Math.min(page,pageCount);
+ const pageEntries=visible.slice((currentPage-1)*WALLET_PAGE_SIZE,currentPage*WALLET_PAGE_SIZE);
  const missing=CURRENCY_CODES.filter(code=>!held.some(w=>w.currency===code));
 
  return <DashboardShell role={role}>
-  <div className="dash-welcome">
+  <div className="dash-welcome wallet-page-head">
    <div><h1>Wallet</h1><p>Your balances across every supported currency. Sessions are paid from the wallet that matches the session currency.</p></div>
    <div className="wallet-head-actions">
     <button className="btn" onClick={()=>setDialog('TOPUP')}><Plus size={16}/> Add money</button>
@@ -38,7 +52,7 @@ export function WalletPage({role}:{role:WorkspaceRole}){
 
   {wallets.error&&<p className="ledger-error">{wallets.error}</p>}
   {wallets.loading&&!held.length?<p className="org-empty">Loading your wallets…</p>:<div className="wallet-grid">
-   {held.map(item=><WalletCard key={item.id} wallet={item}/>)}
+   {held.map(item=><WalletCard key={item.id} wallet={item} onReceive={()=>setDialog('TOPUP')} onSend={()=>setDialog('WITHDRAW')}/>)}
    {Boolean(missing.length)&&<button type="button" className="wallet-card add" onClick={()=>setDialog('ADD_CURRENCY')}>
     <Plus/><strong>Add a currency</strong><span>{missing.length} supported currencies you don’t hold yet</span>
    </button>}
@@ -46,25 +60,44 @@ export function WalletPage({role}:{role:WorkspaceRole}){
 
   <div className="panel wallet-panel">
    <div className="panel-head">
-    <h3>Wallet activity</h3>
-    <label className="inline-select">Currency
-     <select value={filter} onChange={event=>setFilter(event.target.value as CurrencyCode|'ALL')}>
+    <div><h3>Wallet activity</h3><span className="wallet-activity-count">{visible.length} transactions</span></div>
+   </div>
+   <div className="wallet-table-tools">
+    <label className="wallet-table-search"><span className="sr-only">Search activity</span><Search size={16}/>
+     <input value={query} onChange={event=>{setQuery(event.target.value);setPage(1)}} placeholder="Search activity or reference"/>
+    </label>
+    <label>Currency
+     <select value={filter} onChange={event=>{setFilter(event.target.value as CurrencyCode|'ALL');setPage(1)}}>
       <option value="ALL">All currencies</option>
       {held.map(w=><option key={w.id} value={w.currency}>{w.currency}</option>)}
      </select>
     </label>
+    <label>Type
+     <select value={typeFilter} onChange={event=>{setTypeFilter(event.target.value as WalletEntry['kind']|'ALL');setPage(1)}}>
+      <option value="ALL">All activity</option>
+      {entryTypes.map(kind=><option key={kind} value={kind}>{entryLabel[kind]}</option>)}
+     </select>
+    </label>
    </div>
    {entries.loading&&!visible.length?<p className="org-empty">Loading activity…</p>
-    :!visible.length?<p className="org-empty">No wallet activity yet. Top up to book your first session.</p>
-    :<table className="org-table ledger-table"><thead><tr><th>Activity</th><th>Type</th><th>Amount</th><th>Balance after</th><th>When</th></tr></thead><tbody>
-     {visible.map(item=><tr key={item.id}>
+    :!visible.length?<p className="org-empty">No activity matches your filters.</p>
+    :<><div className="wallet-table-wrap"><table className="org-table ledger-table"><thead><tr><th>Activity</th><th>Type</th><th>Amount</th><th>Balance after</th><th>When</th></tr></thead><tbody>
+     {pageEntries.map(item=><tr key={item.id}>
       <td><strong>{item.description}</strong><span>{item.reference?`${item.reference.type.replace('_',' ').toLowerCase()} · ${item.reference.id}`:'—'}</span></td>
       <td><span className="org-tag">{entryLabel[item.kind]}</span></td>
       <td className={item.direction==='CREDIT'?'amount positive':'amount'}>{item.direction==='CREDIT'?'+':'−'}{formatMoney(item.amount,item.currency)}</td>
       <td>{formatMoney(item.balanceAfter,item.currency)}</td>
       <td>{formatDateTime(item.createdAt)}</td>
      </tr>)}
-    </tbody></table>}
+    </tbody></table></div>
+    <div className="wallet-pagination">
+     <span>Showing {(currentPage-1)*WALLET_PAGE_SIZE+1}–{Math.min(currentPage*WALLET_PAGE_SIZE,visible.length)} of {visible.length}</span>
+     <div>
+      <button type="button" onClick={()=>setPage(Math.max(1,currentPage-1))} disabled={currentPage===1} aria-label="Previous page"><ChevronLeft size={16}/></button>
+      {Array.from({length:pageCount},(_,index)=>index+1).map(pageNumber=><button type="button" key={pageNumber} className={pageNumber===currentPage?'active':''} onClick={()=>setPage(pageNumber)} aria-label={`Page ${pageNumber}`} aria-current={pageNumber===currentPage?'page':undefined}>{pageNumber}</button>)}
+      <button type="button" onClick={()=>setPage(Math.min(pageCount,currentPage+1))} disabled={currentPage===pageCount} aria-label="Next page"><ChevronRight size={16}/></button>
+     </div>
+    </div></>}
   </div>
 
   <div className="panel wallet-panel">
@@ -99,17 +132,17 @@ export function WalletPage({role}:{role:WorkspaceRole}){
  </DashboardShell>;
 }
 
-function WalletCard({wallet}:{wallet:Wallet}){
+function WalletCard({wallet,onReceive,onSend}:{wallet:Wallet;onReceive:()=>void;onSend:()=>void}){
  const meta=CURRENCIES[wallet.currency];
  return <article className={wallet.isDefault?'wallet-card native':'wallet-card'}>
   <header><div className="wallet-symbol">{meta.symbol}</div><div><strong>{wallet.currency}</strong><span>{meta.name}</span></div>{wallet.isDefault&&<span className="org-tag owner">native</span>}</header>
   <h2>{formatMoney(wallet.available,wallet.currency)}</h2>
   <p className="wallet-reserved"><Lock size={13}/> {formatMoney(wallet.reserved,wallet.currency)} held in escrow</p>
   <footer>
-   <span><ArrowDownLeft size={14}/> Receive</span>
-   <span><ArrowUpRight size={14}/> Send</span>
+   <button type="button" onClick={onReceive}><ArrowDownLeft size={14}/> Receive</button>
+   <button type="button" onClick={onSend}><ArrowUpRight size={14}/> Send</button>
    {/* Swap is a planned update; showing it disabled keeps the wallet honest about what it can do. */}
-   <span className="disabled" title="Currency swap is coming in a later update"><RefreshCw size={14}/> Swap soon</span>
+   <button type="button" disabled title="Currency swap is coming in a later update"><RefreshCw size={14}/> Swap soon</button>
   </footer>
  </article>;
 }
