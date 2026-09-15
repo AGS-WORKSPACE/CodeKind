@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useLayoutEffect,useRef,useState} from 'react';
 import {Link,NavLink,useNavigate} from 'react-router-dom';
 import {useAuth,workspacePath} from './auth';
 import {ArrowRight,Bell,BookOpen,Building2,CalendarDays,Check,ChevronDown,CircleDollarSign,ClipboardList,Code2,CreditCard,GraduationCap,Heart,Landmark,LayoutDashboard,LogOut,Mail,Megaphone,Menu,MessageCircle,Route as RouteIcon,Scale,Search,Settings,ShieldCheck,Sparkles,Star,UserRound,Users,Wallet,X,Zap} from 'lucide-react';
@@ -13,7 +13,41 @@ export function TutorCard({tutor,compact=false}:{tutor:Tutor;compact?:boolean}){
 export function SearchBar({placeholder='What do you want to learn?'}:{placeholder?:string}={}){const [query,setQuery]=useState('');return <form className="searchbar" onSubmit={e=>{e.preventDefault();location.href=`/tutors/${query.toLowerCase().replaceAll(' ','-')}`}}><Search size={20}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={placeholder} aria-label="Search skill"/><button className="btn">Find my tutor <ArrowRight size={17}/></button></form>}
 export function PathCard({path}:{path:LearningPath}){return <article className="path-card"><div className="path-icon">{path.icon}</div><div className="path-label"><span>{path.level}</span><span>{path.duration}</span></div><h3>{path.name}</h3><p>{path.description}</p><div className="badges">{path.skills.slice(0,4).map(s=><SkillBadge key={s}>{s}</SkillBadge>)}</div>{path.progress!==undefined&&<div className="progress"><i style={{width:`${path.progress}%`}}/><span>{path.progress}% complete</span></div>}<Link to={`/learning-paths/${path.slug}`} className="text-link">Explore path <ArrowRight size={16}/></Link></article>}
 export type TutorFilterState={skill:string;maxPrice:string;experience:string;rating:string;availability:string;language:string;speciality:string};
-export function Filters({values,onChange,onReset,skills,languages,specialities}:{values:TutorFilterState;onChange:(key:keyof TutorFilterState,value:string)=>void;onReset:()=>void;skills:string[];languages:string[];specialities:string[]}){const field=(label:string,key:keyof TutorFilterState,options:[string,string][])=> <label className="filter-field"><span>{label}</span><select value={values[key]} onChange={event=>onChange(key,event.target.value)} aria-label={label}>{options.map(([value,text])=><option value={value} key={value}>{text}</option>)}</select><ChevronDown size={16}/></label>;return <aside className="filters"><div className="filter-head"><h3>Filters</h3><button type="button" onClick={onReset}>Reset</button></div>{field('Subject','skill',[['','Any skill'],...skills.map(x=>[x,x] as [string,string])])}{field('Maximum price','maxPrice',[['','Any price'],['30','Up to $30'],['40','Up to $40'],['50','Up to $50'],['60','Up to $60']])}{field('Experience level','experience',[['','Any experience'],['3','3+ years'],['5','5+ years'],['8','8+ years']])}{field('Tutor rating','rating',[['','Any rating'],['4.8','4.8 and up'],['4.9','4.9 and up'],['4.95','4.95 and up']])}{field('Availability','availability',[['','Any availability'],['available','Available now'],['unavailable','Not currently available']])}{field('Language','language',[['','Any language'],...languages.map(x=>[x,x] as [string,string])])}{field('Speciality','speciality',[['','Any speciality'],...specialities.map(x=>[x,x] as [string,string])])}</aside>}
+export function Filters({values,onChange,onReset,skills,languages,specialities}:{values:TutorFilterState;onChange:(key:keyof TutorFilterState,value:string)=>void;onReset:()=>void;skills:string[];languages:string[];specialities:string[]}){
+  const filtersRef=useRef<HTMLElement>(null);
+
+  useLayoutEffect(()=>{
+    const filters=filtersRef.current;
+    if(!filters)return;
+
+    let animationFrame=0;
+    const updateAvailableHeight=()=>{
+      cancelAnimationFrame(animationFrame);
+      animationFrame=requestAnimationFrame(()=>{
+        if(window.matchMedia('(max-width: 650px)').matches){
+          filters.style.removeProperty('--filters-max-height');
+          return;
+        }
+        const stickyTop=95;
+        const bottomGap=24;
+        const visibleTop=Math.max(stickyTop,filters.getBoundingClientRect().top);
+        filters.style.setProperty('--filters-max-height',`${Math.max(0,window.innerHeight-visibleTop-bottomGap)}px`);
+      });
+    };
+
+    updateAvailableHeight();
+    window.addEventListener('scroll',updateAvailableHeight,{passive:true});
+    window.addEventListener('resize',updateAvailableHeight);
+    return ()=>{
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener('scroll',updateAvailableHeight);
+      window.removeEventListener('resize',updateAvailableHeight);
+    };
+  },[]);
+
+  const field=(label:string,key:keyof TutorFilterState,options:[string,string][])=> <label className="filter-field"><span>{label}</span><select value={values[key]} onChange={event=>onChange(key,event.target.value)} aria-label={label}>{options.map(([value,text])=><option value={value} key={value}>{text}</option>)}</select><ChevronDown size={16}/></label>;
+  return <aside ref={filtersRef} className="filters"><div className="filter-head"><h3>Filters</h3><button type="button" onClick={onReset}>Reset</button></div>{field('Subject','skill',[['','Any skill'],...skills.map(x=>[x,x] as [string,string])])}{field('Maximum price','maxPrice',[['','Any price'],['30','Up to $30'],['40','Up to $40'],['50','Up to $50'],['60','Up to $60']])}{field('Experience level','experience',[['','Any experience'],['3','3+ years'],['5','5+ years'],['8','8+ years']])}{field('Tutor rating','rating',[['','Any rating'],['4.8','4.8 and up'],['4.9','4.9 and up'],['4.95','4.95 and up']])}{field('Availability','availability',[['','Any availability'],['available','Available now'],['unavailable','Not currently available']])}{field('Language','language',[['','Any language'],...languages.map(x=>[x,x] as [string,string])])}{field('Speciality','speciality',[['','Any speciality'],...specialities.map(x=>[x,x] as [string,string])])}</aside>
+}
 const dashboardNav={student:[['Overview','dashboard'],['My Lessons','lessons'],['My Tutors','tutors'],['Messages','messages'],['Learning Paths','learning-paths'],['Learning Ads','learning-ads'],['Assignments','assignments'],['Saved Tutors','saved-tutors'],['Wallet','wallet'],['Session Payments','payments'],['Appeals','appeals'],['Settings','settings']],tutor:[['Overview','dashboard'],['My Students','students'],['Lessons','lessons'],['Calendar','calendar'],['Messages','messages'],['Ad Board','ad-board'],['Assignments','assignments'],['Profile','profile'],['Reviews','reviews'],['Wallet','wallet'],['Earnings','earnings'],['Appeals','appeals'],['Withdrawals','withdrawals'],['Settings','settings']],org:[['Overview','dashboard'],['Trainers','trainers'],['Invitations','invitations'],['Wallet','wallet'],['Earnings','earnings']],admin:[['Dashboard',''],['Students','students'],['Tutors','tutors'],['Tutor Applications','applications'],['Lessons','lessons'],['Payments','payments'],['Withdrawals','withdrawals'],['Programming Skills','skills'],['Learning Paths','learning-paths'],['Reports','reports'],['Settings','settings']]};
 const navIcon:Record<string,React.ReactNode>={dashboard:<LayoutDashboard/>,students:<Users/>,tutors:<GraduationCap/>,lessons:<BookOpen/>,calendar:<CalendarDays/>,messages:<MessageCircle/>,['learning-paths']:<RouteIcon/>,assignments:<ClipboardList/>,['saved-tutors']:<Heart/>,payments:<CreditCard/>,settings:<Settings/>,profile:<UserRound/>,reviews:<Star/>,wallet:<Wallet/>,earnings:<CircleDollarSign/>,appeals:<Scale/>,['learning-ads']:<Megaphone/>,['ad-board']:<Megaphone/>,withdrawals:<Landmark/>,applications:<ClipboardList/>,skills:<Code2/>,reports:<ClipboardList/>,trainers:<GraduationCap/>,invitations:<Mail/>,['']:<LayoutDashboard/>};
 export function DashboardShell({role,children}:{role:'student'|'tutor'|'admin'|'org';children:React.ReactNode}){const {user,logout}=useAuth();const navigate=useNavigate();const demo=role==='student'?['AL','Alex Lee']:role==='tutor'?['DO','David Okafor']:role==='org'?['PR','Priya Raman']:['AD','Admin'];const roleLabel=role==='org'?(user?.orgName??'organisation'):role==='tutor'&&user?.orgName?user.orgName:role;const who=user?`${user.firstName} ${user.lastName}`:demo[1]!;const initials=user?`${user.firstName[0]??''}${user.lastName[0]??''}`.toUpperCase():demo[0]!;const signOut=async()=>{await logout();navigate('/')};return <div className="dash"><aside className="sidebar"><Logo/><div className="user-mini"><div className="avatar sm">{initials}</div><div><strong>{who}</strong><span>{roleLabel}</span></div></div><nav aria-label={`${role} workspace`}>{dashboardNav[role].map(([item,path])=><NavLink className={({isActive})=>isActive?'active':''} end={path===''||path==='dashboard'} key={item} to={role==='admin'?`/admin${path?`/${path}`:''}`:`/${role}/${path}`}><span>{navIcon[path]}</span>{item}</NavLink>)}</nav><div className="sidebar-footer"><Link to="/" className="back">← Back to marketplace</Link><button type="button" className="logout" onClick={signOut}><LogOut/><span>Log out</span></button></div></aside><main className="dash-main"><div className="dash-top"><div><span className="eyebrow">{role==="org"?"organisation":role} workspace</span></div><div className="dash-tools">{role!=='org'&&<><Link to={`/${role}/messages`} aria-label="Messages"><MessageCircle size={18}/></Link><Link className="top-notification" to={`/${role}/notifications`} aria-label="Notifications"><Bell size={18}/><i/></Link></>}<div className="avatar tiny">{initials}</div></div></div>{children}</main></div>}

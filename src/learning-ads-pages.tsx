@@ -36,7 +36,7 @@ export function LearnerAdsPage(){
    <button className="btn" onClick={()=>setComposing(true)}><Megaphone size={16}/> Post a learning ad</button>
   </div>
 
-  <div className="stats-grid">
+  <div className="stats-grid section-spaced-stats">
    <StatCard label="Open ads" value={String(rows.filter(a=>a.status==='OPEN').length)} trend="Taking applications" icon={<Megaphone/>}/>
    <StatCard label="Applications" value={String(rows.reduce((sum,a)=>sum+a.applicationCount,0))} trend="From tutors" icon={<Users/>}/>
    <StatCard label="Filled" value={String(rows.filter(a=>a.status==='FILLED').length)} trend="Sessions booked" icon={<Check/>}/>
