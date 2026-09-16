@@ -9,7 +9,7 @@
 # is needed. Point this at the deployed backend; Netlify cannot read an env var here.
 [[redirects]]
   from = "/api/*"
-  to = "https://api.pairlore.dev/api/:splat"
+  to = "https://pairlorebackend.onrender.com/api/:splat"
   status = 200
   force = true
 
