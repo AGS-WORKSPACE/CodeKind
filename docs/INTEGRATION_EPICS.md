@@ -30,6 +30,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Booking and lessons (epic 4) | ✅ | Free times only, lessons tabs, reschedule, cancel; lobby and room read the booking. |
 | Tutor search | ✅ | Keywords plus meaning (pgvector + Ollama), merged by rank fusion. |
 | Session telemetry | ✅ | Join/leave seen by the server, browser samples every 10s, evidence summary and admin page. |
+| Reference lists admin | ✅ | Show or hide skills, countries, timezones and currencies at `/admin/reference-lists`. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -183,6 +184,5 @@ wallets are deleted.
 
 **UI**
 - Users, bookings, disputes and platform settings on real data.
-- Reference list toggles: hide or show a country, timezone, skill or currency.
 
-**Backend:** admin list endpoints; reference toggles are ready.
+**Backend:** admin list endpoints.
