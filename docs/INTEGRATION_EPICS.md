@@ -25,6 +25,8 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | One account, several workspaces | ✅ | Add learning or teaching; switch from the avatar menu. |
 | Admin error log | ✅ | `/admin/error-log`, for admins signed in to the admin workspace. |
 | Account safety (epic 1) | ✅ | Verify email, forgot and reset password, route guards. |
+| Tutor discovery (epic 2) | ✅ | Search, filters, sort and pages on `/tutors`; real profile page. |
+| Tutor approval (epic 3) | ✅ | Admin applications page with approve and ask-for-changes. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -44,7 +46,7 @@ Booking needs a verified email, so this comes before anything else.
 
 **Done when** a new account can verify, reset its password, and cannot open another role's pages.
 
-## 2. Tutor discovery
+## 2. Tutor discovery ✅
 
 **UI**
 - Tutors page sends `skill`, `q` and `page` to `GET /tutors` and uses its pagination. Remove filters
@@ -52,11 +54,11 @@ Booking needs a verified email, so this comes before anything else.
 - Tutor profile page shows real fields; hide rating, reviews and lesson counts until epic 9.
 - Tutor onboarding drops step 6 (weekly availability).
 
-**Backend:** ready. Price and language filters are small additions to `GET /tutors`.
+**Backend:** `GET /tutors` takes `skill`, `q`, `language`, `maxPrice`, `experience`, `sort` and `page`.
 
 **Done when** an approved tutor can be found by skill and name and their page shows only real data.
 
-## 3. Tutor approval
+## 3. Tutor approval ✅
 
 No tutor is bookable until an admin approves them.
 
@@ -64,8 +66,8 @@ No tutor is bookable until an admin approves them.
 - Admin applications page lists submitted profiles, with approve and reject actions.
 
 **Backend**
-- `GET /admin/tutors?status=submitted` (new).
-- `PATCH /admin/tutors/:id` (ready).
+- `GET /admin/tutors?status=submitted`.
+- `PATCH /admin/tutors/:id`, with an optional `reason` sent to the tutor.
 
 **Done when** an admin signed in with the admin workspace approves a tutor and they appear in search.
 

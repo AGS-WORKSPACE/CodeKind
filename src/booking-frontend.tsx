@@ -47,7 +47,7 @@ export function FrontendBooking(){
   const titles=['Choose a lesson type','Choose lesson duration','Select a date','Select an available time','Review your booking','Payment details','Your lesson is booked!'];
   /* The tutor's listed price is an hourly rate. Everything downstream bills per minute, so the
      booking carries the rate and the scheduled duration rather than a fixed session price. */
-  const hourlyRate=toMinor(type==='TRIAL'?tutor.price*.55:tutor.price,CURRENCY);
+  const hourlyRate=toMinor(type==='TRIAL'?tutor.trialPrice??tutor.price*.55:tutor.price,CURRENCY);
   const price=prorate(hourlyRate,duration);
   const payer={id:user?.id??'demo-student',name:user?`${user.firstName} ${user.lastName}`:'Alex Lee'};
   const setType=(value:LessonType)=>{setTypeState(value);if(value==='TRIAL')setDuration(30)};

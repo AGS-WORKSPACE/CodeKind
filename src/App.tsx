@@ -3,7 +3,7 @@ import{Route,Routes,useLocation,useNavigationType}from'react-router-dom';
 import{PublicLayout}from'./layouts';
 import{ProtectedRoute}from'./route-guard';import{ForgotPasswordPage,ResetPasswordPage,VerifyEmailPage}from'./account-pages';
 import{BecomeTutor,Dashboard,Home,LearningPathDetail,LearningPaths,Messages,NotFound}from'./pages';
-import{AuthPage,TutorOnboarding,TutorProfile,Tutors}from'./connected-pages';import{WorkspacePicker}from'./workspace-picker';
+import{AuthPage,TutorOnboarding}from'./connected-pages';import{TutorProfile,Tutors}from'./tutors-page';import{WorkspacePicker}from'./workspace-picker';
 import{FrontendBooking}from'./booking-frontend';
 import{AdminControlCentre}from'./admin-control';
 import{AssignmentsPage,NotificationsPage,StudentLessons,StudentTutors,TutorCalendar,TutorStudents}from'./workspace-pages';import{SettingsPage}from'./settings-page';import{StudentDashboard}from'./student-dashboard';

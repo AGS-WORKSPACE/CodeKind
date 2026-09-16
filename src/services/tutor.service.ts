@@ -8,10 +8,30 @@ const offlineSkills=():Skill[]=>[...new Set([...featuredSkills.map(s=>s.name),..
 const PROFILE_KEY='pairlore.tutor-profile';
 const countryName=(code:string|null)=>countries.find(c=>c.code===code)?.label??'Remote';
 // Ratings and lesson counts arrive with reviews and sessions; until then a new tutor starts at zero.
-const adapt=(t:TutorProfile):Tutor=>({id:t.id,name:`${t.firstName} ${t.lastName}`,location:countryName(t.country),headline:t.headline,skills:t.skills.map(s=>s.name),skillCodes:t.skills.map(s=>s.code),rating:0,reviews:0,students:0,lessons:0,price:t.hourlyRate,bio:t.bio,available:true,image:`${t.firstName[0]??''}${t.lastName[0]??''}`,experience:t.yearsOfExperience,languages:t.languages,speciality:t.teachingExperience||t.skills[0]?.name||'Personalised lessons'});
-const filterMocks=(params:URLSearchParams)=>{const skill=params.get('skill');return skill?mockTutors.filter(t=>t.skills.some(s=>s.toLowerCase().replaceAll(' ','-')===skill)):mockTutors};
+const adapt=(t:TutorProfile):Tutor=>({id:t.id,name:`${t.firstName} ${t.lastName}`,location:countryName(t.country),headline:t.headline,skills:t.skills.map(s=>s.name),skillCodes:t.skills.map(s=>s.code),rating:0,reviews:0,students:0,lessons:0,price:t.hourlyRate,trialPrice:t.trialRate,bio:t.bio,available:true,image:`${t.firstName[0]??''}${t.lastName[0]??''}`,experience:t.yearsOfExperience,languages:t.languages,speciality:t.teachingExperience||t.skills[0]?.name||'Personalised lessons',
+ links:[['GitHub',t.githubUrl],['Portfolio',t.portfolioUrl],['LinkedIn',t.linkedinUrl]].filter((link):link is [string,string]=>Boolean(link[1])).map(([label,url])=>({label,url}))});
+export type TutorPage={items:Tutor[];pagination:{page:number;pages:number;total:number}};
+// Offline, the demo tutors are filtered and sorted the way the backend would do it.
+const offlineList=async(params:URLSearchParams):Promise<TutorPage>=>{
+ const skill=params.get('skill'),q=(params.get('q')??'').toLowerCase(),language=params.get('language');
+ const maxPrice=Number(params.get('maxPrice')||0),experience=Number(params.get('experience')||0),sort=params.get('sort');
+ const items=mockTutors
+  .filter(t=>!skill||t.skills.some(s=>s.toLowerCase().replaceAll(' ','-')===skill))
+  .filter(t=>!q||`${t.name} ${t.headline}`.toLowerCase().includes(q))
+  .filter(t=>!language||t.languages.includes(language))
+  .filter(t=>!maxPrice||t.price<=maxPrice)
+  .filter(t=>t.experience>=experience)
+  .sort((a,b)=>sort==='price'?a.price-b.price:sort==='experience'?b.experience-a.experience:0);
+ return{items,pagination:{page:1,pages:1,total:items.length}};
+};
 const readSaved=()=>{try{return JSON.parse(localStorage.getItem(PROFILE_KEY)??'null') as TutorProfile|null}catch{return null}};
-export const tutorService={list:async(params:URLSearchParams)=>{try{const data=await api<{items:TutorProfile[];pagination:{page:number;pages:number;total:number}}>(`/tutors?${params}`);return{...data,items:data.items.map(adapt)}}catch{const items=filterMocks(params);return{items,pagination:{page:1,pages:1,total:items.length}}}},detail:async(id:string)=>{try{return adapt((await api<{tutor:TutorProfile}>(`/tutors/${id}`)).tutor)}catch{return mockTutors.find(t=>t.id===id)??mockTutors[0]!}},
+export const tutorService={
+ list:(params:URLSearchParams)=>offlineFallback(
+  ()=>api<{items:TutorProfile[];pagination:TutorPage['pagination']}>(`/tutors?${params}`).then(data=>({...data,items:data.items.map(adapt)})),
+  ()=>offlineList(params)),
+ detail:(id:string)=>offlineFallback(
+  ()=>api<{tutor:TutorProfile}>(`/tutors/${id}`).then(r=>adapt(r.tutor)),
+  async()=>mockTutors.find(t=>t.id===id)??mockTutors[0]!),
  skills:()=>offlineFallback(()=>api<{code:string;label:string}[]>('/reference/skills').then(items=>items.map(item=>({id:item.code,name:item.label}))),async()=>offlineSkills()),
  /** The signed-in tutor's own profile, or null before they have saved one. */
  myProfile:()=>offlineFallback(()=>api<{tutor:TutorProfile}>('/tutor/profile').then(r=>r.tutor).catch(e=>{if(e instanceof ApiError&&e.status===404)return null;throw e}),async()=>readSaved()),

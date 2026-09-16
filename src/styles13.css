@@ -52,3 +52,13 @@
 .error-log-detail dd{margin:0;min-width:0}
 .error-log-detail pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:9px;max-height:320px;overflow:auto;background:#f2f5f3;padding:10px;border-radius:7px}
 .error-log-table th:last-child,.error-log-table td:last-child{text-align:left;white-space:normal;min-width:0;padding-right:11px}
+.application-card{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+.application-card h3{margin:0;font-size:15px}
+.application-card p{color:var(--muted);font-size:12px;margin:4px 0 8px}
+.application-card small{display:block;margin:10px 0 6px;color:var(--muted);font-size:10px}
+.application-card .text-link{border:0;background:none;padding:0;font-size:11px;cursor:pointer}
+.application-details{margin-top:10px;padding:12px;border-radius:9px;background:#f5f8f6}
+.application-details p{color:#33463f;line-height:1.6}
+.reject-reason{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:12px;resize:vertical}
+@media(max-width:650px){.application-card{grid-template-columns:auto 1fr}.application-card .admin-actions{grid-column:1/-1}}
+.admin-page-head>div:only-child{display:block}
