@@ -4,7 +4,7 @@ import{useLoader}from'./hooks/use-payments';
 import{errorLogService,type ErrorLogEntry,type ErrorSource}from'./services/error-log.service';
 import{formatDateTime,relativeTime}from'./lib/money';
 
-const SOURCES:[ErrorSource|'',string][]=[['','All'],['http','Requests'],['panic','Crashes'],['mail','Emails'],['search','Search']];
+const SOURCES:[ErrorSource|'',string][]=[['','All'],['http','Requests'],['panic','Crashes'],['mail','Emails'],['search','Search'],['telemetry','Telemetry']];
 
 /** Server failures saved by the backend, newest first, for debugging what users only saw as "something went wrong". */
 export function AdminErrorLog(){

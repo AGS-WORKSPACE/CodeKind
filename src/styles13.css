@@ -63,3 +63,9 @@
 @media(max-width:650px){.application-card{grid-template-columns:auto 1fr}.application-card .admin-actions{grid-column:1/-1}}
 .admin-page-head>div:only-child{display:block}
 .error-source.search{background:#efe8ff;color:#6546a6}
+.evidence-head{margin:18px 0 12px}.evidence-head h2{margin:0;font-size:18px}.evidence-head p{margin:4px 0 0;color:#60716b;font-size:12px}
+.evidence-table code{font-size:10px}
+.evidence-table th:last-child,.evidence-table td:last-child{text-align:left;white-space:normal;min-width:0}
+.evidence-source{font:600 8px DM Mono;text-transform:uppercase;padding:4px 7px;border-radius:10px;background:#fff2d4;color:#9b671d}
+.evidence-source.server{background:#e5f6eb;color:#287854}
+.error-source.telemetry{background:#e8f1ff;color:#386797}

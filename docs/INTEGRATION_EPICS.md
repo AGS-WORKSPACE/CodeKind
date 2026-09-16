@@ -27,6 +27,9 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Account safety (epic 1) | ✅ | Verify email, forgot and reset password, route guards. |
 | Tutor discovery (epic 2) | ✅ | Search, filters, sort and pages on `/tutors`; real profile page. |
 | Tutor approval (epic 3) | ✅ | Admin applications page with approve and ask-for-changes. |
+| Booking and lessons (epic 4) | ✅ | Free times only, lessons tabs, reschedule, cancel; lobby and room read the booking. |
+| Tutor search | ✅ | Keywords plus meaning (pgvector + Ollama), merged by rank fusion. |
+| Session telemetry | ✅ | Join/leave seen by the server, browser samples every 10s, evidence summary and admin page. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -71,7 +74,7 @@ No tutor is bookable until an admin approves them.
 
 **Done when** an admin signed in with the admin workspace approves a tutor and they appear in search.
 
-## 4. Booking and lessons
+## 4. Booking and lessons ✅
 
 **UI**
 - Booking flow offers times that are actually free: no fixed time list, no past dates.
@@ -81,14 +84,16 @@ No tutor is bookable until an admin approves them.
 - Lesson lobby and room read the booking instead of the payment record.
 
 **Backend**
-- `GET /tutors/:id/busy?from=&to=` (new) so the booking calendar can grey out taken times.
+- `GET /tutors/:id/busy?from=&to=` so booking only offers free times.
+- `GET /bookings?view=upcoming|past|cancelled&page=` for the lessons page.
 
 **Done when** a learner books, reschedules and cancels, and both sides see the same thing.
 
 ## 5. Tutor dashboard
 
 **UI**
-- Split the tutor dashboard out of `Dashboard` in `pages.tsx`, like the student one.
+- Split the tutor dashboard out of `Dashboard` in `pages.tsx`, like the student one, and delete
+  `ScheduledSessions` and `NextSessionPanel`, which still read the demo ledger.
 - Today's sessions, upcoming count and active learners come from `GET /bookings`.
 - Profile status card links to settings when the profile is not approved.
 - Earnings and rating cards wait for epics 7 and 9; show them empty, not invented.
@@ -121,13 +126,12 @@ wallets are deleted.
 ## 8. Live sessions
 
 **UI**
-- The room records when each person joins and leaves; ending the session marks the booking
-  completed and settles payment.
+- Ending the session marks the booking completed and settles payment, using the evidence summary
+  (joins, leaves and media samples are already recorded).
 - Summary page reads the settled booking and payment.
 
 **Backend**
-- Session start and end endpoints, attendance, the evidence record, and a `completed` transition on
-  bookings.
+- A `completed` transition on bookings, and a durable evidence row written with the settlement.
 - Signalling moves to a separate service; the browser-tab demo stays for local use.
 
 ## 9. Reviews and ratings

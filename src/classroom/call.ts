@@ -1,5 +1,5 @@
 import{createContext,useCallback,useContext,useEffect,useRef,useState}from'react';
-import type{SessionPayment}from'../types/payments';
+import type{Booking}from'../services/schedule.service';
 
 // ---------------------------------------------------------------------------
 // Who is who in a session
@@ -8,13 +8,13 @@ import type{SessionPayment}from'../types/payments';
 export type CallSide='tutor'|'learner';
 export type CallParty={name:string;role:'Tutor'|'Learner'};
 
-/** Your side comes from the session (the payee teaches). `?as=tutor|learner` overrides it, so one
-    person can demo both ends of a call from two tabs of the same browser. */
-export function callParties(session:SessionPayment|null,userId:string|undefined,as:string|null){
+/** Your side comes from the booking. `?as=tutor|learner` overrides it, so one person can demo
+    both ends of a call from two tabs of the same browser. */
+export function callParties(booking:Booking|null,userId:string|undefined,as:string|null){
  const override:CallSide|null=as==='tutor'||as==='learner'?as:null;
- const side:CallSide=override??(session&&userId===session.payeeId?'tutor':'learner');
- const tutor:CallParty={name:session?.payeeName??'Your tutor',role:'Tutor'};
- const learner:CallParty={name:session?.payerName??'Your learner',role:'Learner'};
+ const side:CallSide=override??(booking&&userId===booking.tutor.id?'tutor':'learner');
+ const tutor:CallParty={name:booking?.tutor.name??'Your tutor',role:'Tutor'};
+ const learner:CallParty={name:booking?.learner.name??'Your learner',role:'Learner'};
  return{side,otherSide:(side==='tutor'?'learner':'tutor') as CallSide,demoTab:Boolean(override),me:side==='tutor'?tutor:learner,them:side==='tutor'?learner:tutor};
 }
 export const initials=(name:string)=>name.split(' ').map(part=>part[0]).join('').slice(0,2).toUpperCase();
@@ -92,7 +92,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  const[ended,setEnded]=useState<{attendedSeconds:number}|null>(null);
  const media=useRef({muted:startMuted,camera:startCamera,sharing:false});
  const nameRef=useRef(name);nameRef.current=name;
- const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;setScreen:(track:MediaStreamTrack|null)=>void;stream:MediaStream|null;me:string}|null>(null);
+ const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;setScreen:(track:MediaStreamTrack|null)=>void;stream:MediaStream|null;me:string;connection:()=>RTCPeerConnection|null}|null>(null);
 
  useEffect(()=>{
   const me=crypto.randomUUID(); // per mount, so a reloaded tab counts as a new arrival
@@ -111,7 +111,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   const outgoing=(kind:string)=>kind==='video'&&screen?screen:stream?.getTracks().find(track=>track.kind===kind)??null;
   const attachTracks=(conn:RTCPeerConnection)=>{for(const slot of conn.getTransceivers()){const track=outgoing(slot.receiver.track.kind);if(slot.sender.track!==track)slot.sender.replaceTrack(track).catch(()=>{})}};
   const setScreen=(track:MediaStreamTrack|null)=>{screen=track;if(pc)attachTracks(pc)};
-  link.current={send,announce,setScreen,stream:null,me};
+  link.current={send,announce,setScreen,stream:null,me,connection:()=>pc};
   const reset=()=>{pc?.close();pc=null;peerId=null;queued=[];setRemote(null);setPeer(null);setStatus('WAITING')};
   // The offerer creates the audio/video slots; the answerer adopts the offer's (slots made with
   // addTransceiver are never matched to a remote offer, so pre-creating them there would send nothing).
@@ -205,6 +205,8 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  /** Ends the session for both sides; the other tab moves to the summary with the same attended time. */
  const end=useCallback((attendedSeconds:number)=>{const current=link.current;current?.send({type:'end',from:current.me,attendedSeconds})},[]);
 
- return{status,mediaReady,local,remote,share,peer,mediaError,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end};
+ // Connection statistics for telemetry; null while no peer is connected.
+ const stats=useCallback(async()=>link.current?.connection()?.getStats()??null,[]);
+ return{status,mediaReady,local,remote,share,peer,mediaError,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end,stats};
 }
 export type PeerCall=ReturnType<typeof usePeerCall>;
