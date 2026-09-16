@@ -85,7 +85,7 @@ const seed=():PaymentsStore=>{
 
  /* Two sessions still in escrow, so the scheduled-session list and the join flow have something
     to show the moment the preview opens. */
- escrow(store,{sessionId:'les-1042',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'demo-tutor',payeeName:'David Okafor',topic:'Building reusable React hooks',skill:'React',startsAt:hoursFromNow(2),currency:'USD',hourlyRate:4_200,scheduledMinutes:60});
+ escrow(store,{sessionId:'les-1042',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'demo-tutor',payeeName:'David Okafor',topic:'Building reusable React hooks',skill:'React',startsAt:hoursFromNow(DEMO_LEAD_HOURS),currency:'USD',hourlyRate:4_200,scheduledMinutes:60});
  escrow(store,{sessionId:'les-1051',source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'maya-chen',payeeName:'Maya Chen',topic:'Component testing with Vitest',skill:'Testing',startsAt:hoursFromNow(26),currency:'USD',hourlyRate:3_800,scheduledMinutes:30});
 
  /* A trainer teaching under an organisation: the earning party is the organisation, so the money
@@ -104,9 +104,26 @@ const seed=():PaymentsStore=>{
 let cache:PaymentsStore|null=null;
 const read=():PaymentsStore=>{
  if(cache)return cache;
- try{const raw=localStorage.getItem(KEY);if(raw){cache=JSON.parse(raw) as PaymentsStore;return cache}}catch{/* storage blocked */}
- return write(seed());
+ let store:PaymentsStore|null=null;
+ try{const raw=localStorage.getItem(KEY);if(raw)store=JSON.parse(raw) as PaymentsStore}catch{/* storage blocked */}
+ store??=seed();
+ keepDemoSessionReady(store);
+ return write(store);
 };
+// Another tab (the other side of a demo call, say) changed the ledger: drop our copy and re-read it.
+if(typeof window!=='undefined')window.addEventListener('storage',event=>{if(event.key===KEY)cache=null});
+
+/* The demo pair, Alex and David, always has a session to walk into. When theirs has been taught,
+   cancelled or left long in the past, a fresh one is booked through the normal escrow, so wallet
+   balances stay consistent with the ledger. Runs once per page load. */
+const DEMO_LEAD_HOURS=10/60;
+function keepDemoSessionReady(store:PaymentsStore){
+ const stale=Date.now()-60*60_000;
+ const ready=store.payments.some(p=>p.status==='HELD'&&p.payerId==='demo-student'&&p.payeeId==='demo-tutor'&&p.startsAt&&new Date(p.startsAt).getTime()>stale);
+ if(ready)return;
+ try{escrow(store,{sessionId:`les-demo-${Date.now().toString(36)}`,source:'DIRECT_BOOKING',payerId:'demo-student',payerType:'USER',payerName:'Alex Lee',payeeId:'demo-tutor',payeeName:'David Okafor',topic:'Pairing on React hooks',skill:'React',startsAt:hoursFromNow(DEMO_LEAD_HOURS),currency:'USD',hourlyRate:4_200,scheduledMinutes:60})}
+ catch{/* the demo learner has run out of funds; the dashboards simply show nothing to join */}
+}
 const write=(store:PaymentsStore)=>{
  cache=store;
  try{localStorage.setItem(KEY,JSON.stringify(store))}catch{/* storage blocked — changes just won't survive a refresh */}
