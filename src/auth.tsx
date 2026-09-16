@@ -2,7 +2,7 @@ import {createContext,useContext,useEffect,useState} from 'react';
 import {authService,type AccountInput,type Role,type SessionUser} from './services/auth.service';
 
 type RegisterInput=Parameters<typeof authService.register>[0];
-type AuthContextValue={user:SessionUser|null;workspaces:Role[];loading:boolean;login:(email:string,password:string)=>Promise<SessionUser>;register:(input:RegisterInput)=>Promise<SessionUser>;chooseWorkspace:(role:Role)=>Promise<SessionUser>;addWorkspace:(role:Role)=>Promise<SessionUser>;updateAccount:(input:AccountInput)=>Promise<SessionUser>;logout:()=>Promise<void>};
+type AuthContextValue={user:SessionUser|null;workspaces:Role[];loading:boolean;login:(email:string,password:string)=>Promise<SessionUser>;register:(input:RegisterInput)=>Promise<SessionUser>;chooseWorkspace:(role:Role)=>Promise<SessionUser>;addWorkspace:(role:Role)=>Promise<SessionUser>;updateAccount:(input:AccountInput)=>Promise<SessionUser>;refresh:()=>Promise<void>;logout:()=>Promise<void>};
 const AuthContext=createContext<AuthContextValue|null>(null);
 
 export function AuthProvider({children}:{children:React.ReactNode}){
@@ -17,8 +17,9 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   const chooseWorkspace=async(role:Role)=>keep(await authService.chooseWorkspace(role));
   const addWorkspace=async(role:Role)=>keep(await authService.addWorkspace(role));
   const updateAccount=async(input:AccountInput)=>{if(!user)throw new Error('Sign in to update your account');return keep(await authService.updateAccount(input,user))};
+  const refresh=async()=>{try{keep(await authService.me())}catch{setUser(null);setWorkspaces([])}};
   const logout=async()=>{await authService.logout();setUser(null);setWorkspaces([])};
-  return <AuthContext.Provider value={{user,workspaces,loading,login,register,chooseWorkspace,addWorkspace,updateAccount,logout}}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{user,workspaces,loading,login,register,chooseWorkspace,addWorkspace,updateAccount,refresh,logout}}>{children}</AuthContext.Provider>;
 }
 
 /** Where a signed-in user lands after login, and where the nav's workspace link points.
@@ -27,4 +28,3 @@ export const workspacePath=(role:Role|null)=>role==='STUDENT'?'/student/dashboar
 
 export const useAuth=()=>{const value=useContext(AuthContext);if(!value)throw new Error('useAuth must be used inside AuthProvider');return value};
 
-export function ProtectedRoute({children}:{roles:Role[];children:React.ReactNode}){return children}

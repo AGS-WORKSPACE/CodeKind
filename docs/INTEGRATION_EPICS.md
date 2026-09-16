@@ -22,11 +22,14 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Account and tutor profile settings | ✅ | `/account/*`, `/tutor/profile`. |
 | Notifications | ✅ | Inbox, read state, unread dot. |
 | Tutor calendar | ✅ | Week view from `/bookings`. |
+| One account, several workspaces | ✅ | Add learning or teaching; switch from the avatar menu. |
+| Admin error log | ✅ | `/admin/error-log`, for admins signed in to the admin workspace. |
+| Account safety (epic 1) | ✅ | Verify email, forgot and reset password, route guards. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
 
-## 1. Account safety
+## 1. Account safety ✅
 
 Booking needs a verified email, so this comes before anything else.
 
@@ -63,7 +66,6 @@ No tutor is bookable until an admin approves them.
 **Backend**
 - `GET /admin/tutors?status=submitted` (new).
 - `PATCH /admin/tutors/:id` (ready).
-- Admin routes move from `X-Admin-Key` to the admin workspace role.
 
 **Done when** an admin signed in with the admin workspace approves a tutor and they appear in search.
 

@@ -17,3 +17,4 @@
 .search-select li[aria-selected=true]{color:#2f8f68;font-weight:700}
 .search-select li svg{width:15px;height:15px;flex:none}
 .search-select li.search-select-empty{color:var(--muted);cursor:default;background:none}
+.auth-note{font-size:11px;color:var(--muted);margin:0 0 18px}

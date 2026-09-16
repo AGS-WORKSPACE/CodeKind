@@ -51,6 +51,9 @@ export const authService={
  saveNotificationPreferences:(prefs:NotificationPreferences)=>offlineFallback(
   ()=>api<NotificationPreferences>('/account/notification-preferences',{method:'PUT',body:JSON.stringify(prefs)}),
   async()=>prefs),
+ verifyEmail:(token:string)=>api<unknown>('/auth/verify-email',{method:'POST',body:JSON.stringify({token})}).then(()=>undefined),
+ requestPasswordReset:(email:string)=>api<unknown>('/auth/forgot-password',{method:'POST',body:JSON.stringify({email})}).then(()=>undefined),
+ resetPassword:(token:string,password:string)=>api<unknown>('/auth/reset-password',{method:'POST',body:JSON.stringify({token,password})}).then(()=>undefined),
  resendVerification:()=>api<unknown>('/auth/verification-email',{method:'POST'}).then(()=>undefined),
  logout:async()=>{
   try{return await api<Record<string,never>>('/auth/logout',{method:'POST'})}
