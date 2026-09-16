@@ -73,16 +73,16 @@ export function StudentDashboard(){
  </DashboardShell>;
 }
 
-function SessionRow({booking,primary=false}:{booking:Booking;primary?:boolean}){
+export function SessionRow({booking,primary=false,teaching=false}:{booking:Booking;primary?:boolean;teaching?:boolean}){
  const when=new Date(booking.startsAt);
  return <div className={primary?'next-card':'next-card muted'}>
   <div className="datebox"><b>{String(when.getDate()).padStart(2,'0')}</b><span>{when.toLocaleDateString('en',{month:'short'}).toUpperCase()}</span></div>
   <div>
    {primary&&<span className="eyebrow">{relativeTime(booking.startsAt).toUpperCase()}</span>}
    <h3>{booking.topic}</h3>
-   <p>with {booking.tutor.name} · {when.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'})} · {booking.durationMinutes} min</p>
+   <p>with {teaching?booking.learner.name:booking.tutor.name} · {when.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'})} · {booking.durationMinutes} min</p>
   </div>
-  {primary&&<Link className="btn" to={`/lesson/${booking.id}/lobby`}>Join session</Link>}
+  {primary&&<Link className="btn" to={`/lesson/${booking.id}/lobby`}>{teaching?'Start session':'Join session'}</Link>}
  </div>;
 }
 

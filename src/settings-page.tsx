@@ -64,7 +64,7 @@ function AccountForm({tab}:{tab:string}){
 
 const EMPTY_PROFILE:TutorProfileInput={headline:'',bio:'',yearsOfExperience:0,teachingExperience:'',languages:[],hourlyRate:0,trialRate:0,githubUrl:'',portfolioUrl:'',linkedinUrl:'',skills:[]};
 const toInput=(p:TutorProfile):TutorProfileInput=>({...p,githubUrl:p.githubUrl??'',portfolioUrl:p.portfolioUrl??'',linkedinUrl:p.linkedinUrl??'',skills:p.skills.map(({code,yearsExperience,isPrimary})=>({code,yearsExperience,isPrimary}))});
-const STATUS_NOTE:Record<TutorStatus,string>={
+export const STATUS_NOTE:Record<TutorStatus,string>={
  draft:'Add a headline, bio, at least one skill and an hourly rate to submit your profile for review.',
  submitted:'Your profile is waiting for review. Learners will find you once it is approved.',
  approved:'Your profile is live. Learners can find and book you.',

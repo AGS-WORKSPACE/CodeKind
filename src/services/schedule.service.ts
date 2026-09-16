@@ -6,6 +6,9 @@ export type Booking={id:string;tutor:{id:string;name:string};learner:{id:string;
 export type BookingInput={tutorId:string;skillCode?:string;topic:string;notes?:string;startsAt:string;durationMinutes:number};
 export type LessonView='upcoming'|'past'|'cancelled';
 export type Busy={startsAt:string;endsAt:string};
+export type Student={id:string;name:string;learningGoals:string|null;skills:string[];sessions:number;upcoming:number;nextAt:string|null;lastAt:string|null};
+export type StudentView='active'|'previous';
+export type Students={items:Student[];active:number;previous:number};
 
 export const endsAt=(b:{startsAt:string;durationMinutes:number})=>new Date(b.startsAt).getTime()+b.durationMinutes*60000;
 
@@ -36,6 +39,10 @@ export const scheduleService={
  book:(input:BookingInput)=>offlineFallback(
   ()=>api<{booking:Booking}>('/bookings',{method:'POST',body:JSON.stringify(input)}).then(r=>r.booking),
   async()=>null),
+ /** The tutor's learners, 20 a page. Active ones have a session coming up. */
+ students:(view:StudentView,page=1)=>offlineFallback(
+  ()=>api<Students>(`/tutor/students?view=${view}&page=${page}`),
+  async():Promise<Students>=>({items:[],active:0,previous:0})),
  cancel:(id:string,reason='')=>api<{booking:Booking}>(`/bookings/${id}/cancel`,{method:'POST',body:JSON.stringify({reason})}).then(r=>r.booking),
  reschedule:(id:string,startsAt:string)=>api<{booking:Booking}>(`/bookings/${id}/reschedule`,{method:'POST',body:JSON.stringify({startsAt})}).then(r=>r.booking),
 };

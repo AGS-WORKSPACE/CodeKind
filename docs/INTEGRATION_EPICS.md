@@ -31,6 +31,8 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Tutor search | ✅ | Keywords plus meaning (pgvector + Ollama), merged by rank fusion. |
 | Session telemetry | ✅ | Join/leave seen by the server, browser samples every 10s, evidence summary and admin page. |
 | Reference lists admin | ✅ | Show or hide skills, countries, timezones and currencies at `/admin/reference-lists`. |
+| Tutor dashboard (epic 5) | ✅ | Today, next session, active students, hours taught and profile status. |
+| My students (epic 6) | ✅ | Active and previous learners from `/tutor/students`. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -90,24 +92,25 @@ No tutor is bookable until an admin approves them.
 
 **Done when** a learner books, reschedules and cancels, and both sides see the same thing.
 
-## 5. Tutor dashboard
+## 5. Tutor dashboard ✅
 
 **UI**
-- Split the tutor dashboard out of `Dashboard` in `pages.tsx`, like the student one, and delete
-  `ScheduledSessions` and `NextSessionPanel`, which still read the demo ledger.
-- Today's sessions, upcoming count and active learners come from `GET /bookings`.
-- Profile status card links to settings when the profile is not approved.
-- Earnings and rating cards wait for epics 7 and 9; show them empty, not invented.
+- `TutorDashboard` replaces the demo `Dashboard`; `ScheduledSessions` and `NextSessionPanel` are deleted.
+- Today's sessions, upcoming count and hours taught come from `GET /bookings`; active students from
+  `GET /tutor/students`.
+- Profile status card links to settings until the profile is approved.
+- Earnings and rating cards return with epics 7 and 9, rather than showing invented numbers.
 
 **Backend:** ready.
 
-## 6. My students
+## 6. My students ✅
 
 **UI**
-- `/tutor/students` lists learners from the tutor's bookings: sessions together and the next one.
+- `/tutor/students` lists learners in active and previous tabs: learning goal, skills, sessions held
+  and booked, and the next or last session.
 
 **Backend**
-- `GET /tutor/students` (new), grouped server-side so it does not need a long date range.
+- `GET /tutor/students?view=active|previous&page=`, grouped server-side with counts for both tabs.
 
 ## 7. Wallets and payments
 
