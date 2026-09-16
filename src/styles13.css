@@ -35,3 +35,20 @@
 .status-timeline strong{font-size:13px;line-height:1.35}
 .status-timeline small{font-size:11px;line-height:1.35}
 .admin-table-tools select{min-width:150px;height:40px;padding:0 36px 0 12px;font-size:12px;line-height:40px;color:#253c34;cursor:pointer}
+.error-log-filters{display:flex;gap:6px;margin-bottom:12px}
+.error-log-filters button{border:1px solid #d9e2dd;background:#fff;border-radius:8px;padding:8px 14px;font:600 10px DM Mono;color:#60716b;cursor:pointer}
+.error-log-filters button.active{background:#10251f;border-color:#10251f;color:#fff}
+.error-log-row{cursor:pointer}
+.error-log-row:hover td{background:#f7faf8}
+.error-log-table td{vertical-align:top;white-space:nowrap}
+.error-log-table td.error-message{white-space:normal;max-width:520px;overflow-wrap:anywhere;font-family:DM Mono;font-size:9px;color:#8a2e2e}
+.error-log-table code{font-size:9px;color:#253c34}
+.error-source{font:600 8px DM Mono;text-transform:uppercase;padding:4px 7px;border-radius:10px;background:#e8f1ff;color:#386797}
+.error-source.panic{background:#ffe9e7;color:#a1433c}
+.error-source.mail{background:#fff2d4;color:#9b671d}
+.error-log-detail td{background:#fbfcfb;white-space:normal}
+.error-log-detail dl{display:grid;grid-template-columns:90px 1fr;gap:8px 14px;margin:4px 0;font-size:10px}
+.error-log-detail dt{color:#60716b;font:600 8px DM Mono;text-transform:uppercase;padding-top:2px}
+.error-log-detail dd{margin:0;min-width:0}
+.error-log-detail pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:9px;max-height:320px;overflow:auto;background:#f2f5f3;padding:10px;border-radius:7px}
+.error-log-table th:last-child,.error-log-table td:last-child{text-align:left;white-space:normal;min-width:0;padding-right:11px}

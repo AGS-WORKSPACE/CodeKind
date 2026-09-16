@@ -1,8 +1,8 @@
 import {createContext,useContext,useEffect,useState} from 'react';
-import {authService,type Role,type SessionUser} from './services/auth.service';
+import {authService,type AccountInput,type Role,type SessionUser} from './services/auth.service';
 
 type RegisterInput=Parameters<typeof authService.register>[0];
-type AuthContextValue={user:SessionUser|null;workspaces:Role[];loading:boolean;login:(email:string,password:string)=>Promise<SessionUser>;register:(input:RegisterInput)=>Promise<SessionUser>;chooseWorkspace:(role:Role)=>Promise<SessionUser>;logout:()=>Promise<void>};
+type AuthContextValue={user:SessionUser|null;workspaces:Role[];loading:boolean;login:(email:string,password:string)=>Promise<SessionUser>;register:(input:RegisterInput)=>Promise<SessionUser>;chooseWorkspace:(role:Role)=>Promise<SessionUser>;addWorkspace:(role:Role)=>Promise<SessionUser>;updateAccount:(input:AccountInput)=>Promise<SessionUser>;logout:()=>Promise<void>};
 const AuthContext=createContext<AuthContextValue|null>(null);
 
 export function AuthProvider({children}:{children:React.ReactNode}){
@@ -15,8 +15,10 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   const login=async(email:string,password:string)=>keep(await authService.login(email,password));
   const register=async(input:RegisterInput)=>keep(await authService.register(input));
   const chooseWorkspace=async(role:Role)=>keep(await authService.chooseWorkspace(role));
+  const addWorkspace=async(role:Role)=>keep(await authService.addWorkspace(role));
+  const updateAccount=async(input:AccountInput)=>{if(!user)throw new Error('Sign in to update your account');return keep(await authService.updateAccount(input,user))};
   const logout=async()=>{await authService.logout();setUser(null);setWorkspaces([])};
-  return <AuthContext.Provider value={{user,workspaces,loading,login,register,chooseWorkspace,logout}}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{user,workspaces,loading,login,register,chooseWorkspace,addWorkspace,updateAccount,logout}}>{children}</AuthContext.Provider>;
 }
 
 /** Where a signed-in user lands after login, and where the nav's workspace link points.

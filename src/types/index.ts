@@ -1,2 +1,2 @@
-export type Tutor={id:string;name:string;location:string;headline:string;skills:string[];rating:number;reviews:number;students:number;lessons:number;price:number;bio:string;available:boolean;image:string;experience:number;languages:string[];speciality:string};
+export type Tutor={id:string;name:string;location:string;headline:string;skills:string[];skillCodes?:string[];rating:number;reviews:number;students:number;lessons:number;price:number;bio:string;available:boolean;image:string;experience:number;languages:string[];speciality:string};
 export type LearningPath={slug:string;name:string;description:string;level:string;duration:string;modules:number;skills:string[];icon:string;progress?:number};

@@ -3,6 +3,8 @@ import {Link,useParams} from 'react-router-dom';
 import {ArrowLeft,ArrowRight,CalendarDays,Check,ChevronLeft,ChevronRight,Clock,Code2,Lock,MessageCircle,ShieldCheck,Sparkles,Wallet} from 'lucide-react';
 import {Stars} from './components';
 import {tutors} from './data/mock';
+import {tutorService} from './services/tutor.service';
+import {scheduleService} from './services/schedule.service';
 import {useToast} from './ui-feedback';
 import {useAuth} from './auth';
 import {useLoader} from './hooks/use-payments';
@@ -29,12 +31,13 @@ const startInstant=(date:string,time:string)=>{
 
 export function FrontendBooking(){
   const{tutorId}=useParams();
-  const tutor=tutors.find(item=>item.id===tutorId)||tutors[0];
+  const loaded=useLoader(()=>tutorService.detail(tutorId??''),[tutorId]);
+  const tutor=loaded.data??tutors.find(item=>item.id===tutorId)??tutors[0]!;
   const[step,setStep]=useState(1);
   const[type,setTypeState]=useState<LessonType>('TRIAL');
   const[duration,setDuration]=useState<30|60>(30);
-  const[selectedDate,setSelectedDate]=useState('2026-09-03');
-  const[visibleMonth,setVisibleMonth]=useState(new Date(2026,8,1));
+  const[selectedDate,setSelectedDate]=useState(()=>dateKey(new Date(Date.now()+86400000)));
+  const[visibleMonth,setVisibleMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
   const[time,setTime]=useState('3:30 PM');
   const[note,setNote]=useState('');
   const toast=useToast();
@@ -55,7 +58,12 @@ export function FrontendBooking(){
     setBusy(true);
     setError(null);
     try{
-      await ledgerService.create({sessionId:`les-${Date.now().toString(36)}`,source:'DIRECT_BOOKING',payerId:payer.id,payerType:'USER',payerName:payer.name,payeeId:tutor.id,payeeName:tutor.name,topic:`${type==='TRIAL'?'Trial lesson':'Lesson'} with ${tutor.name}`,skill:tutor.skills[0]??tutor.speciality,startsAt:startInstant(selectedDate,time),currency:CURRENCY,hourlyRate,scheduledMinutes:duration});
+      const topic=`${type==='TRIAL'?'Trial lesson':'Lesson'} with ${tutor.name}`;
+      const startsAt=startInstant(selectedDate,time);
+      // The backend reserves the time; offline it returns null and the demo ledger keeps its own id.
+      const booking=await scheduleService.book({tutorId:tutor.id,skillCode:tutor.skillCodes?.[0],topic,notes:note,startsAt,durationMinutes:duration});
+      await ledgerService.create({sessionId:booking?.id??`les-${Date.now().toString(36)}`,source:'DIRECT_BOOKING',payerId:payer.id,payerType:'USER',payerName:payer.name,payeeId:tutor.id,payeeName:tutor.name,topic,skill:tutor.skills[0]??tutor.speciality,startsAt,currency:CURRENCY,hourlyRate,scheduledMinutes:duration})
+        .catch(async problem=>{if(booking)await scheduleService.cancel(booking.id,'Payment could not be held').catch(()=>{});throw problem});
       toast(`Booking created · ${formatMoney(price,CURRENCY)} held in escrow`);
       setStep(7);
     }catch(problem){setError(problem instanceof Error?problem.message:'The booking could not be created.')}
