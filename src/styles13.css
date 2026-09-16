@@ -62,3 +62,4 @@
 .reject-reason{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:12px;resize:vertical}
 @media(max-width:650px){.application-card{grid-template-columns:auto 1fr}.application-card .admin-actions{grid-column:1/-1}}
 .admin-page-head>div:only-child{display:block}
+.error-source.search{background:#efe8ff;color:#6546a6}

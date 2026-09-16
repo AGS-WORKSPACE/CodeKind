@@ -10,7 +10,7 @@ const EMPTY_FILTERS:TutorFilterState={skill:'',maxPrice:'',experience:'',languag
 const LANGUAGES=['Arabic','English','French','German','Hausa','Hindi','Igbo','Mandarin','Portuguese','Spanish','Swahili','Yoruba'];
 
 /** Waits until typing pauses, so search does not ask the backend on every key. */
-function useDebounced(value:string,ms=300){
+function useDebounced(value:string,ms=500){
  const[settled,setSettled]=useState(value);
  useEffect(()=>{const timer=setTimeout(()=>setSettled(value),ms);return()=>clearTimeout(timer)},[value,ms]);
  return settled;
@@ -21,7 +21,7 @@ export function Tutors(){
  const navigate=useNavigate();
  const[query,setQuery]=useState('');
  const[filters,setFilters]=useState<TutorFilterState>({...EMPTY_FILTERS,skill:routeSkill??''});
- const[sort,setSort]=useState('newest');
+ const[sort,setSort]=useState('best');
  const[page,setPage]=useState(1);
  const search=useDebounced(query);
  const skills=useLoader(()=>tutorService.skills(),[]);
@@ -52,15 +52,16 @@ export function Tutors(){
    <span className="eyebrow">FIND YOUR MENTOR</span>
    <h1>{skillName?`${skillName} tutors`:'Expert tutors'} who work in the field</h1>
    <p>Compare experience, rates and skills to find the right tutor.</p>
-   <div className="market-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name or headline"/></div>
+   <div className="market-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name, skill or what you want to learn"/></div>
   </div>
   <div className="market-layout">
    <Filters values={filters} onChange={update} onReset={reset} skills={skillOptions} languages={LANGUAGES}/>
    <div>
     <div className="results-head">
      <span><strong>{pagination?.total??0} tutors</strong> found</span>
-     <label>Sort by <select value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Newest</option><option value="price">Lowest rate</option><option value="experience">Most experienced</option></select></label>
+     <label>Sort by <select value={sort} onChange={e=>setSort(e.target.value)}><option value="best">{search.trim()?'Best match':'Newest'}</option><option value="newest" hidden={!search.trim()}>Newest</option><option value="price">Lowest rate</option><option value="experience">Most experienced</option></select></label>
     </div>
+    {results.loading&&search.trim()&&<p className="search-status">Finding the best matches…</p>}
     {results.loading&&!results.data?<LoadingCards/>
      :results.error?<ErrorState message={results.error} onRetry={()=>results.reload()}/>
      :items.length?<div className="tutor-list">{items.map(t=><TutorCard key={t.id} tutor={t}/>)}</div>

@@ -28,13 +28,17 @@ export function useLoader<T>(load:()=>Promise<T>,deps:React.DependencyList){
  const[loading,setLoading]=useState(true);
  const[error,setError]=useState<string|null>(null);
  const live=useRef(true);
+ const latest=useRef(0);
  useEffect(()=>{live.current=true;return()=>{live.current=false}},[]);
  // The caller passes a fresh closure each render; deps decide when it actually re-runs.
+ // Only the newest request may update the screen, so a slow older one cannot overwrite it.
  const run=useCallback(()=>{
+  const request=++latest.current;
+  const current=()=>live.current&&request===latest.current;
   setLoading(true);
-  return load().then(value=>{if(live.current){setData(value);setError(null)}})
-   .catch(problem=>{if(live.current)setError(problem instanceof Error?problem.message:'Something went wrong.')})
-   .finally(()=>{if(live.current)setLoading(false)});
+  return load().then(value=>{if(current()){setData(value);setError(null)}})
+   .catch(problem=>{if(current())setError(problem instanceof Error?problem.message:'Something went wrong.')})
+   .finally(()=>{if(current())setLoading(false)});
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },deps);
  useEffect(()=>{void run()},[run]);

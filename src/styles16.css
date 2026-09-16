@@ -2997,3 +2997,4 @@
 .profile-stats .new-tutor { color: #2e7357; font-weight: 600; font-size: 13px; }
 .profile-links { display: flex; flex-wrap: wrap; gap: 10px; }
 .profile-links a { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; color: #2e7357; font-size: 12px; font-weight: 600; }
+.search-status { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
