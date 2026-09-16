@@ -1,6 +1,7 @@
 import{useEffect,useId,useMemo,useRef,useState}from'react';
 import{Check,ChevronDown}from'lucide-react';
 import{countries,timezoneLabel,timezones}from'./data/locations';
+import{useReference}from'./services/reference.service';
 
 export type SearchOption={value:string;label:string};
 
@@ -62,7 +63,22 @@ export function SearchSelect({label,options,placeholder='Select…',value:contro
 type PresetProps=Omit<SearchSelectProps,'label'|'options'>&{label?:string};
 // A saved value stays selectable even when this browser's list lacks it (an old zone alias, a legacy country name).
 const withCurrent=(options:SearchOption[],value:string|undefined,label=value)=>!value||options.some(o=>o.value===value)?options:[{value,label:label??value},...options];
-const countryOptions=countries.map(c=>({value:c,label:c}));
+/* Both lists come from the backend, which decides what is on offer. Until it answers — or when it
+   cannot be reached — the browser's own Intl data stands in. */
+const offlineCountries=()=>countries.map(country=>({code:country.code,label:country.label}));
+const offlineTimezones=()=>timezones().map(zone=>({code:zone.value,label:zone.label}));
 
-export function CountrySelect({label='Country',placeholder='Search countries',...props}:PresetProps){const current=props.value??props.defaultValue;return <SearchSelect label={label} placeholder={placeholder} options={withCurrent(countryOptions,current)} {...props}/>}
-export function TimezoneSelect({label='Timezone',placeholder='Search timezones',...props}:PresetProps){const current=props.value??props.defaultValue;return <SearchSelect label={label} placeholder={placeholder} options={withCurrent(timezones(),current,current&&timezoneLabel(current))} {...props}/>}
+export function CountrySelect({label='Country',placeholder='Search countries',...props}:PresetProps){
+ const items=useReference('countries',offlineCountries);
+ const current=props.value??props.defaultValue;
+ const options=items.map(item=>({value:item.code,label:item.label}));
+ return <SearchSelect label={label} placeholder={placeholder} options={withCurrent(options,current)} {...props}/>;
+}
+
+export function TimezoneSelect({label='Timezone',placeholder='Search timezones',...props}:PresetProps){
+ const items=useReference('timezones',offlineTimezones);
+ const current=props.value??props.defaultValue;
+ // Offsets move with the seasons, so they are added here rather than stored.
+ const options=items.map(item=>({value:item.code,label:timezoneLabel(item.code)}));
+ return <SearchSelect label={label} placeholder={placeholder} options={withCurrent(options,current,current&&timezoneLabel(current))} {...props}/>;
+}

@@ -36,7 +36,7 @@ export type Signal=
  |{type:'hello';from:string;name:string;reply?:boolean}
  |{type:'offer'|'answer';from:string;to:string;sdp:RTCSessionDescriptionInit}
  |{type:'ice';from:string;to:string;candidate:RTCIceCandidateInit}
- |{type:'media';from:string;muted:boolean;camera:boolean;ready:boolean}
+ |{type:'media';from:string;muted:boolean;camera:boolean;sharing:boolean;ready:boolean}
  |{type:'end';from:string;attendedSeconds:number}
  |{type:'bye';from:string};
 
@@ -58,7 +58,7 @@ export function browserSignaling(room:string):SignalingChannel{
 
 export type CallStatus='WAITING'|'CONNECTING'|'CONNECTED';
 /** `ready` is false while their camera/mic request is still pending (a permission prompt, say). */
-export type PeerInfo={name:string;muted:boolean;camera:boolean;ready:boolean};
+export type PeerInfo={name:string;muted:boolean;camera:boolean;sharing:boolean;ready:boolean};
 
 // Camera and mic if possible, mic alone if there is no camera, and nothing (receive only) otherwise.
 async function acquireMedia(){
@@ -88,10 +88,11 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  const[mediaError,setMediaError]=useState<string|null>(null);
  const[muted,setMuted]=useState(startMuted);
  const[camera,setCamera]=useState(startCamera);
+ const[share,setShare]=useState<MediaStream|null>(null);
  const[ended,setEnded]=useState<{attendedSeconds:number}|null>(null);
- const media=useRef({muted:startMuted,camera:startCamera});
+ const media=useRef({muted:startMuted,camera:startCamera,sharing:false});
  const nameRef=useRef(name);nameRef.current=name;
- const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;stream:MediaStream|null;me:string}|null>(null);
+ const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;setScreen:(track:MediaStreamTrack|null)=>void;stream:MediaStream|null;me:string}|null>(null);
 
  useEffect(()=>{
   const me=crypto.randomUUID(); // per mount, so a reloaded tab counts as a new arrival
@@ -103,10 +104,14 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   let queued:RTCIceCandidateInit[]=[];
   let settled=false; // the camera/mic request has finished, one way or the other
   const send=(signal:Signal)=>{if(!disposed)channel.send(signal)};
-  const announce=()=>send({type:'media',from:me,ready:settled,muted:media.current.muted||!stream?.getAudioTracks().length,camera:media.current.camera&&Boolean(stream?.getVideoTracks().length)});
-  link.current={send,announce,stream:null,me};
+  const announce=()=>send({type:'media',from:me,ready:settled,sharing:media.current.sharing,muted:media.current.muted||!stream?.getAudioTracks().length,camera:media.current.camera&&Boolean(stream?.getVideoTracks().length)});
 
-  const attachTracks=(conn:RTCPeerConnection)=>{for(const slot of conn.getTransceivers()){const track=stream?.getTracks().find(t=>t.kind===slot.receiver.track.kind)??null;if(slot.sender.track!==track)slot.sender.replaceTrack(track).catch(()=>{})}};
+  // While sharing, the screen goes out in place of the camera: one swap, no renegotiation.
+  let screen:MediaStreamTrack|null=null;
+  const outgoing=(kind:string)=>kind==='video'&&screen?screen:stream?.getTracks().find(track=>track.kind===kind)??null;
+  const attachTracks=(conn:RTCPeerConnection)=>{for(const slot of conn.getTransceivers()){const track=outgoing(slot.receiver.track.kind);if(slot.sender.track!==track)slot.sender.replaceTrack(track).catch(()=>{})}};
+  const setScreen=(track:MediaStreamTrack|null)=>{screen=track;if(pc)attachTracks(pc)};
+  link.current={send,announce,setScreen,stream:null,me};
   const reset=()=>{pc?.close();pc=null;peerId=null;queued=[];setRemote(null);setPeer(null);setStatus('WAITING')};
   // The offerer creates the audio/video slots; the answerer adopts the offer's (slots made with
   // addTransceiver are never matched to a remote offer, so pre-creating them there would send nothing).
@@ -128,7 +133,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
    if(disposed||signal.from===me||('to' in signal&&signal.to!==me))return;
    switch(signal.type){
     case 'hello':{
-     setPeer(current=>({name:signal.name,muted:current?.muted??false,camera:current?.camera??false,ready:current?.ready??false}));
+     setPeer(current=>({name:signal.name,muted:current?.muted??false,camera:current?.camera??false,sharing:current?.sharing??false,ready:current?.ready??false}));
      if(signal.reply)return;
      send({type:'hello',from:me,name:nameRef.current,reply:true});
      const conn=open(signal.from,true);
@@ -154,7 +159,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
      if(!pc||peerId!==signal.from)return;
      if(pc.remoteDescription)await pc.addIceCandidate(signal.candidate).catch(()=>{});else queued.push(signal.candidate);
      return;
-    case 'media':setPeer(current=>current&&{...current,muted:signal.muted,camera:signal.camera,ready:signal.ready});return;
+    case 'media':setPeer(current=>current&&{...current,muted:signal.muted,camera:signal.camera,sharing:signal.sharing,ready:signal.ready});return;
     case 'end':setEnded({attendedSeconds:signal.attendedSeconds});return;
     case 'bye':if(!peerId||peerId===signal.from)reset();return;
    }
@@ -162,7 +167,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
 
   acquireMedia()
    .then(acquired=>{if(disposed){acquired.getTracks().forEach(track=>track.stop());return}stream=acquired;if(link.current)link.current.stream=acquired;acquired.getAudioTracks().forEach(track=>{track.enabled=!media.current.muted});acquired.getVideoTracks().forEach(track=>{track.enabled=media.current.camera});if(!acquired.getVideoTracks().length){media.current.camera=false;setCamera(false)}setLocal(acquired);if(pc)attachTracks(pc)})
-   .catch(error=>{if(disposed)return;setMediaError(mediaProblem(error));media.current={muted:true,camera:false};setMuted(true);setCamera(false)})
+   .catch(error=>{if(disposed)return;setMediaError(mediaProblem(error));media.current={muted:true,camera:false,sharing:false};setMuted(true);setCamera(false)})
    .finally(()=>{if(disposed)return;settled=true;setMediaReady(true);announce()});
   let chain:Promise<unknown>=Promise.resolve();
   const unsubscribe=channel.subscribe(signal=>{chain=chain.then(()=>handle(signal)).catch(()=>{})});
@@ -172,11 +177,34 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   return()=>{bye();disposed=true;window.removeEventListener('pagehide',bye);unsubscribe();channel.close();pc?.close();stream?.getTracks().forEach(track=>track.stop());link.current=null};
  },[room,signaling]);
 
+ // Stops sharing, whether from our button or the browser's own "stop sharing" bar.
+ const stopShare=useCallback(()=>{
+  setShare(current=>{current?.getTracks().forEach(track=>track.stop());return null});
+  media.current.sharing=false;
+  link.current?.setScreen(null);
+  link.current?.announce();
+ },[]);
+
+ const toggleShare=useCallback(async()=>{
+  if(media.current.sharing){stopShare();return}
+  if(!navigator.mediaDevices?.getDisplayMedia)return;
+  try{
+   const display=await navigator.mediaDevices.getDisplayMedia({video:true});
+   const track=display.getVideoTracks()[0];
+   if(!track){display.getTracks().forEach(t=>t.stop());return}
+   track.onended=()=>stopShare();
+   setShare(display);
+   media.current.sharing=true;
+   link.current?.setScreen(track);
+   link.current?.announce();
+  }catch{/* the picker was dismissed */}
+ },[stopShare]);
+
  const toggleMute=useCallback(()=>{const next=!media.current.muted;media.current.muted=next;setMuted(next);link.current?.stream?.getAudioTracks().forEach(track=>{track.enabled=!next});link.current?.announce()},[]);
  const toggleCamera=useCallback(()=>{const stream=link.current?.stream;if(!stream?.getVideoTracks().length)return;const next=!media.current.camera;media.current.camera=next;setCamera(next);stream.getVideoTracks().forEach(track=>{track.enabled=next});link.current?.announce()},[]);
  /** Ends the session for both sides; the other tab moves to the summary with the same attended time. */
  const end=useCallback((attendedSeconds:number)=>{const current=link.current;current?.send({type:'end',from:current.me,attendedSeconds})},[]);
 
- return{status,mediaReady,local,remote,peer,mediaError,muted,camera,ended,toggleMute,toggleCamera,end};
+ return{status,mediaReady,local,remote,share,peer,mediaError,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end};
 }
 export type PeerCall=ReturnType<typeof usePeerCall>;

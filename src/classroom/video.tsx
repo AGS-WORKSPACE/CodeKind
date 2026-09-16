@@ -3,10 +3,10 @@ import{firstName,initials,type CallParty,type PeerCall}from'./call';
 
 /** Binds a MediaStream to a <video>. Remote audio can be refused by autoplay rules; then it plays
     muted and `onBlocked` lets the caller offer a "turn on sound" button. */
-export function StreamVideo({stream,muted=false,mirrored=false,hidden=false,onBlocked}:{stream:MediaStream;muted?:boolean;mirrored?:boolean;hidden?:boolean;onBlocked?:()=>void}){
+export function StreamVideo({stream,muted=false,mirrored=false,hidden=false,contain=false,onBlocked}:{stream:MediaStream;muted?:boolean;mirrored?:boolean;hidden?:boolean;contain?:boolean;onBlocked?:()=>void}){
  const ref=useRef<HTMLVideoElement>(null);
  useEffect(()=>{const video=ref.current;if(!video)return;if(video.srcObject!==stream)video.srcObject=stream;video.muted=muted;video.play().catch(()=>{if(muted)return;video.muted=true;video.play().catch(()=>{});onBlocked?.()})},[stream,muted,onBlocked]);
- return <video ref={ref} className={`stream-video${mirrored?' mirrored':''}${hidden?' hidden':''}`} autoPlay playsInline/>;
+ return <video ref={ref} className={`stream-video${mirrored?' mirrored':''}${hidden?' hidden':''}${contain?' contain':''}`} autoPlay playsInline/>;
 }
 
 const statusLabel=(call:PeerCall,them:CallParty)=>call.status==='CONNECTED'?'Live · peer to peer':call.status==='CONNECTING'?'Connecting…':`Waiting for ${firstName(them.name)}`;
@@ -17,26 +17,27 @@ function RemoteTile({call,them,onInvite,large=false}:{call:PeerCall;them:CallPar
  const first=firstName(them.name);
  const connected=call.status==='CONNECTED'&&call.remote;
  const starting=!call.peer?.ready;
- const cameraOff=starting||!call.peer?.camera;
+ const sharing=Boolean(call.peer?.sharing);
+ const cameraOff=!sharing&&(starting||!call.peer?.camera);
  return <article className={`video-tile remote${large?' large':''}${connected?' live':''}`}>
   <div className="video-person">
-   {call.remote&&<StreamVideo key={soundBlocked?'blocked':'open'} stream={call.remote} muted={soundBlocked} hidden={!connected||cameraOff} onBlocked={blocked}/>}
+   {call.remote&&<StreamVideo key={soundBlocked?'blocked':'open'} stream={call.remote} muted={soundBlocked} contain={sharing} hidden={!connected||cameraOff} onBlocked={blocked}/>}
    {!connected?<div className="call-waiting"><div className="avatar-video">{initials(them.name)}</div><strong>{call.status==='CONNECTING'?`Connecting to ${first}…`:`Waiting for ${first} to join`}</strong>
      {call.status!=='CONNECTING'&&<><button type="button" onClick={onInvite}><ExternalLink/> Open {first}’s side in a new tab</button><small>Demo: the call connects between tabs of this browser.</small></>}</div>
     :cameraOff?<div className="camera-off"><div>{initials(them.name)}</div>{!starting&&<CameraOff/>}<span>{starting?`${first} is starting their camera…`:`${first}’s camera is off`}</span></div>:null}
    {soundBlocked&&<button type="button" className="sound-unlock" onClick={()=>setSoundBlocked(false)}><Volume2/> Turn on {first}’s sound</button>}
   </div>
-  <footer><span><i className={connected?'live':''}/>{them.name}{them.role==='Tutor'&&<b>Tutor</b>}</span>{call.peer?.muted&&connected&&<MicOff aria-label={`${first} is muted`}/>}</footer>
+  <footer><span><i className={connected?'live':''}/>{sharing&&connected?`${first} is sharing their screen`:them.name}{them.role==='Tutor'&&<b>Tutor</b>}</span>{call.peer?.muted&&connected&&<MicOff aria-label={`${first} is muted`}/>}</footer>
  </article>;
 }
 
 function SelfTile({call,me,pip=false}:{call:PeerCall;me:CallParty;pip?:boolean}){
- const showVideo=call.local&&call.camera&&call.local.getVideoTracks().length>0;
+ const showVideo=call.share??(call.local&&call.camera&&call.local.getVideoTracks().length>0?call.local:null);
  return <article className={`video-tile self${pip?' pip':''}`}>
   <div className="video-person">
-   {showVideo?<StreamVideo stream={call.local!} muted mirrored/>:<div className="camera-off"><div>{initials(me.name)}</div>{call.mediaReady&&<CameraOff/>}<span>{!call.mediaReady?'Starting camera…':call.mediaError??'Your camera is off'}</span></div>}
+   {showVideo?<StreamVideo stream={showVideo} muted mirrored={!call.sharing} contain={call.sharing}/>:<div className="camera-off"><div>{initials(me.name)}</div>{call.mediaReady&&<CameraOff/>}<span>{!call.mediaReady?'Starting camera…':call.mediaError??'Your camera is off'}</span></div>}
   </div>
-  <footer><span>You · {me.name}</span>{call.muted&&<MicOff aria-label="You are muted"/>}</footer>
+  <footer><span>{call.sharing?'You · sharing your screen':`You · ${me.name}`}</span>{call.muted&&<MicOff aria-label="You are muted"/>}</footer>
  </article>;
 }
 

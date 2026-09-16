@@ -1,0 +1,20 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Keeps the API on the same origin as the app, so the session cookie stays first-party and no CORS
+# is needed. Point this at the deployed backend; Netlify cannot read an env var here.
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.pairlore.dev/api/:splat"
+  status = 200
+  force = true
+
+# Single-page app: every other path serves the shell so deep links and refreshes work.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
