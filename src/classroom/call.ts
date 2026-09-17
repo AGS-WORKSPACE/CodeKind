@@ -42,9 +42,8 @@ export type Signal=
 
 export type SignalingChannel={send:(signal:Signal)=>void;subscribe:(handler:(signal:Signal)=>void)=>()=>void;close:()=>void};
 
-/* Tabs of one browser, over BroadcastChannel: enough to demo a real call on one computer with no
-   server. For calls between devices, a WebSocket channel from the backend (one room per session id,
-   relaying these same Signal messages) replaces this function and nothing else changes. */
+/* Tabs of one browser, over BroadcastChannel: enough to demo a call on one computer with no server.
+   Calls between devices use socketSignaling in connect.ts, which relays these same messages. */
 export function browserSignaling(room:string):SignalingChannel{
  const channel=new BroadcastChannel(`pairlore-call:${room}`);
  const handlers=new Set<(signal:Signal)=>void>();
@@ -55,6 +54,8 @@ export function browserSignaling(room:string):SignalingChannel{
 // ---------------------------------------------------------------------------
 // The call
 // ---------------------------------------------------------------------------
+
+const NO_SERVERS:RTCIceServer[]=[];
 
 export type CallStatus='WAITING'|'CONNECTING'|'CONNECTED';
 /** `ready` is false while their camera/mic request is still pending (a permission prompt, say). */
@@ -79,7 +80,7 @@ const mediaProblem=(error:unknown)=>error instanceof DOMException&&error.name===
  * start, and tracks are swapped into them (replaceTrack, no renegotiation) whenever they arrive —
  * so a slow permission prompt only delays your picture, never the connection.
  */
-export function usePeerCall({room,name,startMuted=false,startCamera=true,signaling=browserSignaling}:{room:string;name:string;startMuted?:boolean;startCamera?:boolean;signaling?:(room:string)=>SignalingChannel}){
+export function usePeerCall({room,name,startMuted=false,startCamera=true,signaling=browserSignaling,iceServers=NO_SERVERS}:{room:string;name:string;startMuted?:boolean;startCamera?:boolean;signaling?:(room:string)=>SignalingChannel;iceServers?:RTCIceServer[]}){
  const[status,setStatus]=useState<CallStatus>('WAITING');
  const[mediaReady,setMediaReady]=useState(false);
  const[local,setLocal]=useState<MediaStream|null>(null);
@@ -112,12 +113,13 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   const attachTracks=(conn:RTCPeerConnection)=>{for(const slot of conn.getTransceivers()){const track=outgoing(slot.receiver.track.kind);if(slot.sender.track!==track)slot.sender.replaceTrack(track).catch(()=>{})}};
   const setScreen=(track:MediaStreamTrack|null)=>{screen=track;if(pc)attachTracks(pc)};
   link.current={send,announce,setScreen,stream:null,me,connection:()=>pc};
-  const reset=()=>{pc?.close();pc=null;peerId=null;queued=[];setRemote(null);setPeer(null);setStatus('WAITING')};
+  // Saying hello again lets a peer who lost us too find us once either of us is back.
+  const reset=()=>{pc?.close();pc=null;peerId=null;queued=[];setRemote(null);setPeer(null);setStatus('WAITING');send({type:'hello',from:me,name:nameRef.current})};
   // The offerer creates the audio/video slots; the answerer adopts the offer's (slots made with
   // addTransceiver are never matched to a remote offer, so pre-creating them there would send nothing).
   const open=(other:string,offerer:boolean)=>{
    pc?.close();queued=[];peerId=other;
-   const conn=new RTCPeerConnection();
+   const conn=new RTCPeerConnection({iceServers});
    pc=conn;
    if(offerer){conn.addTransceiver('audio',{direction:'sendrecv'});conn.addTransceiver('video',{direction:'sendrecv'});attachTracks(conn)}
    const incoming=new MediaStream();
@@ -134,7 +136,8 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
    switch(signal.type){
     case 'hello':{
      setPeer(current=>({name:signal.name,muted:current?.muted??false,camera:current?.camera??false,sharing:current?.sharing??false,ready:current?.ready??false}));
-     if(signal.reply)return;
+     // A reply, or a hello resent after a signaling reconnect while the call itself still works.
+     if(signal.reply||(peerId===signal.from&&pc?.connectionState==='connected'))return;
      send({type:'hello',from:me,name:nameRef.current,reply:true});
      const conn=open(signal.from,true);
      await conn.setLocalDescription(await conn.createOffer());
@@ -175,7 +178,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   const bye=()=>channel.send({type:'bye',from:me});
   window.addEventListener('pagehide',bye);
   return()=>{bye();disposed=true;window.removeEventListener('pagehide',bye);unsubscribe();channel.close();pc?.close();stream?.getTracks().forEach(track=>track.stop());link.current=null};
- },[room,signaling]);
+ },[room,signaling,iceServers]);
 
  // Stops sharing, whether from our button or the browser's own "stop sharing" bar.
  const stopShare=useCallback(()=>{

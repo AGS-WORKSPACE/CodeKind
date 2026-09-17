@@ -33,6 +33,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Reference lists admin | ✅ | Show or hide skills, countries, timezones and currencies at `/admin/reference-lists`. |
 | Tutor dashboard (epic 5) | ✅ | Today, next session, active students, hours taught and profile status. |
 | My students (epic 6) | ✅ | Active and previous learners from `/tutor/students`. |
+| Live call connections | ✅ | Signaling service (PairloreSignal), tickets and STUN/TURN from `/sessions/:id/connect`. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -136,7 +137,8 @@ wallets are deleted.
 
 **Backend**
 - A `completed` transition on bookings, and a durable evidence row written with the settlement.
-- Signalling moves to a separate service; the browser-tab demo stays for local use.
+- Signaling and STUN/TURN are done: the room connects through PairloreSignal when the API has
+  `SIGNAL_URL`, and demo tabs (`?as=`) still use the browser-only channel.
 
 ## 9. Reviews and ratings
 

@@ -1,9 +1,9 @@
 import{useEffect,useRef}from'react';
 import{api,apiUrl}from'../services/api';
 import type{PeerCall}from'./call';
+import{isBookingId}from'./connect';
 
 const SAMPLE_EVERY=10_000;
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Kind='media.state'|'media.sample'|'connection.degraded'|'participant.reconnected';
 type ClientEvent={eventId:string;type:Kind;occurredAt:string;sequence:number;payload:Record<string,unknown>};
@@ -24,7 +24,7 @@ function totals(report:RTCStatsReport){
 /** Reports what happens in the room to the session's evidence record. The server records joining
     and leaving itself; everything sent from here is stored as the browser's claim. */
 export function useSessionTelemetry(sessionId:string,call:PeerCall){
- const enabled=UUID.test(sessionId);
+ const enabled=isBookingId(sessionId);
  const queue=useRef<ClientEvent[]>([]);
  const sequence=useRef(0);
  const callRef=useRef(call);callRef.current=call;
