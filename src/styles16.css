@@ -3079,3 +3079,54 @@
   .conversation-list { max-height: 210px; flex-direction: row; overflow-x: auto; }
   .conversation-list .conversation { width: auto; }
 }
+
+/* Assignments read like a ruled sheet: the due date in the margin, a stamp for the state. */
+.assignment-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.assignment-bar .workspace-tabs { margin: 0; }
+.assignment-sheets { list-style: none; margin: 16px 0 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.assignment-sheet { position: relative; border-top: 1px solid #e6ece8; }
+/* The margin rule runs the whole height, through the answer and feedback too. */
+.assignment-sheet::before { content: ''; position: absolute; top: 0; bottom: 0; left: 71px; border-left: 3px double #f1c3c3; pointer-events: none; }
+.assignment-sheet:first-child { border-top: 0; }
+.sheet-line { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; align-items: center; gap: 16px; width: 100%; padding: 0 18px 0 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.sheet-line:hover { background: #f7faf8; }
+/* The margin rule: a column with a double line on its right, like an exercise book. */
+.sheet-due { align-self: stretch; display: grid; place-content: center; justify-items: center; gap: 1px; padding: 14px 0; }
+.sheet-due small { font: 9px DM Mono, ui-monospace, monospace; letter-spacing: .1em; color: #9aa9a3; }
+.sheet-due b { font-size: 15px; letter-spacing: -.02em; color: var(--ink); }
+.sheet-copy { display: grid; gap: 3px; min-width: 0; padding: 14px 0; }
+.sheet-copy strong { font-size: 12.5px; }
+.sheet-copy small { font-size: 10px; color: #71827b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-stamp { font: 600 9px DM Mono, ui-monospace, monospace; text-transform: uppercase; letter-spacing: .12em; padding: 4px 8px; border: 1.5px solid currentColor; border-radius: 4px; transform: rotate(-3deg); color: #6b7c75; }
+.state-submitted .sheet-stamp { color: #b7791f; }
+.state-reviewed .sheet-stamp { color: #2e8763; }
+.overdue .sheet-stamp { color: #c2453b; }
+.overdue .sheet-due b { color: #c2453b; }
+.sheet-detail { display: grid; gap: 12px; padding: 4px 18px 18px 92px; }
+.sheet-instructions { margin: 0; font-size: 11.5px; line-height: 1.75; color: #3c4b45; white-space: pre-wrap; }
+.sheet-answer, .sheet-feedback { display: grid; gap: 5px; padding-left: 12px; border-left: 2px solid #d7e1dc; }
+.sheet-feedback { border-left-color: #2e8763; }
+.sheet-answer small, .sheet-feedback small { font: 9px DM Mono, ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: #8a9a94; }
+.sheet-answer p, .sheet-feedback p { margin: 0; font-size: 11px; line-height: 1.7; white-space: pre-wrap; }
+.sheet-answer a { font-size: 11px; color: #2e8763; display: inline-flex; gap: 4px; align-items: center; word-break: break-all; }
+.sheet-form { display: grid; gap: 10px; }
+.sheet-form label { display: grid; gap: 5px; font-size: 10px; font-weight: 700; }
+.sheet-form label span { font-weight: 400; color: #8a9a94; }
+.sheet-form input, .sheet-form textarea, .sheet-form select { border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font: inherit; font-size: 11px; font-weight: 400; }
+.sheet-form textarea { min-height: 80px; }
+.sheet-form .btn { justify-self: start; }
+.summary-homework { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fff; margin-top: 14px; display: grid; gap: 10px; text-align: left; }
+.summary-homework h2 { margin: 0; font-size: 15px; }
+.summary-homework ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.summary-homework li { display: grid; gap: 2px; padding-left: 10px; border-left: 3px double #f1c3c3; }
+.summary-homework li strong { font-size: 11.5px; }
+.summary-homework li small { font-size: 10px; color: #71827b; }
+.work-row { display: grid; gap: 2px; padding: 9px 0 9px 10px; border-left: 3px double #f1c3c3; margin-top: 8px; }
+.work-row strong { font-size: 11px; color: var(--ink); }
+.work-row small { font-size: 9.5px; color: #71827b; }
+@media (max-width: 700px) {
+  .sheet-line { grid-template-columns: 58px minmax(0, 1fr); }
+  .sheet-stamp { grid-column: 2; justify-self: start; margin-bottom: 12px; }
+  .sheet-detail { padding-left: 74px; }
+  .assignment-sheet::before { left: 55px; }
+}

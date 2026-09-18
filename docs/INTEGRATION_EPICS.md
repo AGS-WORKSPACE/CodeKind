@@ -38,6 +38,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Live sessions (epic 8) | ✅ | Ending completes the booking and settles it; the evidence is kept; the summary reads the booking. |
 | Reviews and ratings (epic 9) | ✅ | Learners review a finished session; ratings on cards, profiles, search and the tutor dashboard. |
 | Messages (epic 10) | ✅ | Conversations between two people who share a session, with unread counts and notifications. |
+| Assignments (epic 11) | ✅ | Tutors set work after a session, learners hand it in, tutors review it; on the summary and dashboard too. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
@@ -159,7 +160,7 @@ wallets are deleted.
 - Signaling and STUN/TURN are done: the room connects through PairloreSignal when the API has
   `SIGNAL_URL`, and demo tabs (`?as=`) still use the browser-only channel.
 
-**Left for later epics:** homework joins the summary with epic 11. The review is there already.
+The review (epic 9) and the homework (epic 11) are on the summary too.
 
 ## 9. Reviews and ratings ✅
 
@@ -184,9 +185,9 @@ The pages that showed invented content now either read the API or say what is mi
   reviews. The invented testimonials, the fake customer logo strip and the "4.9 from 12,000+
   sessions" claim are gone; `GET /stats` supplies the numbers, and each one is hidden until there
   is something to count.
-- **Assignments and learning paths** keep their routes and say plainly that they are not
-  built yet, with the fake conversation, demo assignments and invented curriculum deleted. They
-  come back with epics 11 and 12. Messages arrived with epic 10.
+- **Learning paths** keep their route and say plainly they are not built yet, with the invented
+  curriculum deleted; they come with epic 12. The fake conversation and demo assignments were
+  replaced by the real messages (epic 10) and assignments (epic 11).
 - **The admin control centre** shows real counts, applications waiting and open appeals. Every
   section still without a backend says so rather than showing a demo table, and the mock admin
   repository is deleted. Epic 15 fills them in.
@@ -209,12 +210,22 @@ The pages that showed invented content now either read the API or say what is mi
   each other. Read state is one timestamp per side.
 - The first message after the other person is up to date raises a notification; a burst raises one.
 
-## 11. Assignments
+## 11. Assignments ✅
 
 **UI**
-- Tutor creates and reviews work; learner submits it. Dashboard assignments panel goes live.
+- `/student/assignments` and `/tutor/assignments` in three tabs named for who the work waits on:
+  to do, handed in and reviewed for the learner; with learners, to review and reviewed for the tutor.
+- The tutor sets work from the page (choosing the session) or straight from the lesson summary; the
+  learner's summary shows what was set. The student dashboard panel is live.
+- A learner hands in an answer, a link, or both, and may replace it until it is reviewed.
 
-**Backend:** assignments and submissions, linked to a booking.
+**Backend**
+- `GET /assignments?view=open|submitted|reviewed` (or `?bookingId=` for one session),
+  `POST /assignments`, `GET /assignments/:id`, `POST /assignments/:id/submit`,
+  `POST /assignments/:id/review`.
+- Work belongs to a booking, and only its tutor can set it; a cancelled session takes none. The
+  answer and the feedback live on the same row, since there is one submission.
+- The learner is told when work is set and reviewed; the tutor the first time it is handed in.
 
 ## 12. Learning paths
 

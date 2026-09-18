@@ -1,4 +1,4 @@
-import{useEffect,useMemo,useState}from'react';import{Link,useNavigate}from'react-router-dom';import{BookOpen,CalendarDays,Check,ChevronLeft,ChevronRight,ClipboardList,Clock,CreditCard,MessageCircle,Plus,Search}from'lucide-react';import{DashboardShell,Stars}from'./components';import{useToast}from'./ui-feedback';
+import{useEffect,useMemo,useState}from'react';import{Link,useNavigate}from'react-router-dom';import{BookOpen,CalendarDays,Check,ChevronLeft,ChevronRight,Clock,CreditCard,MessageCircle,Plus,Search}from'lucide-react';import{DashboardShell,Stars}from'./components';import{useToast}from'./ui-feedback';
 import{notificationService,type AppNotification,type Inbox,type NotificationKind}from'./services/notification.service';
 import{scheduleService,type Booking}from'./services/schedule.service';
 import{localTimezone,timezoneLabel}from'./data/locations';
@@ -24,17 +24,6 @@ export function NotificationsPage({role}:{role:'student'|'tutor'}){
    :<div className="notifications-list">{shown.map(n=><article className={n.read?'':'unread'} key={n.id} role="button" tabIndex={0} onClick={()=>open(n)} onKeyDown={e=>{if(e.key==='Enter')open(n)}}><div className="notification-icon">{kindIcon(n.kind)}</div><div><strong>{n.title}</strong><p>{n.body}</p><small>{relativeTime(n.createdAt)}</small></div>{!n.read&&<i/>}</article>)}</div>}
  </DashboardShell>;
 }
-/* Assignments have no backend yet, so the page says so instead of listing demo work. It comes
-   back with epic 11. */
-export function AssignmentsPage({role}:{role:'student'|'tutor'}){
- return <DashboardShell role={role}>
-  <PageTitle title="Assignments" text={role==='student'?'Work your tutor sets you will appear here.':'Work you set your learners will appear here.'}/>
-  <section className="workspace-empty"><ClipboardList/><h3>Assignments are not ready yet</h3>
-   <p>{role==='student'?'Until they are, your tutor can share work in the session and in the booking notes.':'Until they are, share work during the session or in the booking notes, and review it together next time.'}</p>
-   <Link className="btn" to={`/${role}/lessons`}><CalendarDays size={16}/> Open my lessons</Link></section>
- </DashboardShell>;
-}
-
 const HOUR_PX=41;const FIRST_HOUR=8;
 // Places a session on its day column: the grid starts at 8 AM, with 82px for every 2 hours.
 const slotStyle=(b:Booking)=>{const start=new Date(b.startsAt);const hours=start.getHours()+start.getMinutes()/60-FIRST_HOUR;return{top:`${44+Math.max(0,hours)*HOUR_PX}px`,height:`${Math.max(28,b.durationMinutes/60*HOUR_PX)}px`}};

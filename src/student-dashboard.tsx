@@ -6,6 +6,7 @@ import{useAuth}from'./auth';
 import{useLoader}from'./hooks/use-payments';
 import{authService}from'./services/auth.service';
 import{scheduleService,type Booking}from'./services/schedule.service';
+import{assignmentsService}from'./services/assignments.service';
 import{tutorService}from'./services/tutor.service';
 import{relativeTime}from'./lib/money';
 
@@ -31,6 +32,7 @@ export function StudentDashboard(){
  const month=startOfMonth(new Date());
  const bookings=useLoader(()=>scheduleService.range(month,addMonths(month,2)),[user?.id]);
  const tutors=useLoader(()=>tutorService.list(new URLSearchParams({sort:'recommended'})),[]);
+ const work=useLoader(()=>assignmentsService.list('open'),[user?.id]);
  const summary=summarise(bookings.data??[]);
  const[next,following]=summary.upcoming;
 
@@ -60,8 +62,12 @@ export function StudentDashboard(){
     <Link className="text-link" to="/learning-paths">Browse learning paths <ArrowRight/></Link>
    </section>
    <section className="panel">
-    <div className="panel-head"><h2>Assignments</h2></div>
-    <p className="org-empty"><ClipboardList size={14}/> Work your tutors set will appear here.</p>
+    <div className="panel-head"><h2>Assignments</h2><Link className="text-link" to="/student/assignments">View all</Link></div>
+    {work.error?<p className="ledger-error">{work.error}</p>
+     :!work.data?<p className="org-empty">Loading your work…</p>
+     :!work.data.items.length?<p className="org-empty"><ClipboardList size={14}/> Nothing to do. Work your tutors set appears here.</p>
+     :work.data.items.slice(0,3).map(a=><Link className="work-row" to="/student/assignments" key={a.id}>
+       <strong>{a.title}</strong><small>{a.tutor.name}{a.dueAt?` · due ${new Date(a.dueAt).toLocaleDateString('en',{day:'numeric',month:'short'})}`:''}</small></Link>)}
    </section>
    <section className="panel">
     <div className="panel-head"><h2>Suggested tutors</h2></div>

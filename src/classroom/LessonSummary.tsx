@@ -3,6 +3,7 @@ import{useAuth}from'../auth';
 import{useLoader}from'../hooks/use-payments';
 import{ledgerService}from'../services/ledger.service';
 import{reviewsService,type Review}from'../services/reviews.service';
+import{SessionHomework}from'../assignments-page';
 import{scheduleService,type Booking}from'../services/schedule.service';
 import{formatMoney,relativeTime}from'../lib/money';
 import type{SessionPayment}from'../types/payments';
@@ -129,6 +130,7 @@ function StudentSummary({booking,payment,error}:SideProps){
   <p>You spent {minutes} minutes on {booking.topic} with {booking.tutor.name}.</p>
   <SessionFacts booking={booking} minutes={minutes}/>
   <SessionBilling payment={payment} error={error} view="student"/>
+  <SessionHomework bookingId={booking.id} role="student"/>
   <ReviewForm bookingId={booking.id} tutorName={booking.tutor.name}/>
   <div className="summary-actions">
    <Link className="btn" to={`/booking/${booking.tutor.id}`}>Book another lesson</Link>
@@ -147,6 +149,7 @@ function TutorSummary({booking,payment,error}:SideProps){
   <p>{booking.topic} · the session is closed and the money is settled.</p>
   <SessionFacts booking={booking} minutes={minutes}/>
   <SessionBilling payment={payment} error={error} view="tutor"/>
+  <SessionHomework bookingId={booking.id} role="tutor"/>
   <div className="summary-actions">
    <Link className="btn" to="/tutor/students"><Users size={15}/> My students</Link>
    <Link className="btn ghost" to="/tutor/calendar">My calendar</Link>

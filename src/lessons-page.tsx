@@ -63,7 +63,7 @@ function LessonCard({booking,teaching,onCancel,onMove}:{booking:Booking;teaching
  </article>;
 }
 
-function Dialog({title,text,onClose,children}:{title:string;text:string;onClose:()=>void;children:React.ReactNode}){
+export function Dialog({title,text,onClose,children}:{title:string;text:string;onClose:()=>void;children:React.ReactNode}){
  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
   <div className="modal lesson-dialog" role="dialog" aria-modal="true" aria-labelledby="lesson-dialog-title" onMouseDown={e=>e.stopPropagation()}>
    <button type="button" className="modal-close" aria-label="Close" onClick={onClose}><X/></button>
