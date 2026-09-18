@@ -1,11 +1,11 @@
 import {useEffect,useRef,useState} from 'react';
-import {BarChart3,Brain,Building2,Cloud,Code2,Pause,PenTool,Play,ShieldCheck,Sparkles,Zap} from 'lucide-react';
+import {BarChart3,Brain,Building2,Cloud,Code2,Languages,Pause,PenTool,Play,ShieldCheck,Sparkles,Zap} from 'lucide-react';
 import {SearchBar,Stars} from './components';
 import {domains} from './data/domains';
 import type {DomainIcon,PanelBlock} from './data/domains';
 
 const ROTATE_MS=7000;
-const icons:Record<DomainIcon,typeof Code2>={code:Code2,brain:Brain,chart:BarChart3,cloud:Cloud,shield:ShieldCheck,pen:PenTool};
+const icons:Record<DomainIcon,typeof Code2>={code:Code2,brain:Brain,chart:BarChart3,cloud:Cloud,shield:ShieldCheck,pen:PenTool,languages:Languages};
 
 /** Auto-rotation is suppressed for visitors who ask for reduced motion; the rail still switches domains on click. */
 function usePrefersReducedMotion(){

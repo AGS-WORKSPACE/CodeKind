@@ -8,7 +8,7 @@ export type ListBlock={type:'list';items:[label:string,tag:string,tone:Tone][]};
 export type SwatchBlock={type:'swatches';items:[label:string,color:string][]};
 export type PanelBlock=CodeBlock|MeterBlock|BarBlock|ListBlock|SwatchBlock;
 export type Tone='ok'|'warn'|'risk'|'idle';
-export type DomainIcon='code'|'brain'|'chart'|'cloud'|'shield'|'pen';
+export type DomainIcon='code'|'brain'|'chart'|'cloud'|'shield'|'pen'|'languages';
 
 export type Domain={
  id:string;
@@ -48,6 +48,25 @@ export const domains:Domain[]=[
    '}']}]},
  mentor:{initials:'MC',name:'Maya',role:'React tutor',quote:'Great instinct. Now let’s make it reusable.'},
  next:{label:'Next lesson',when:'Today · 6:00 PM'},
+},
+{
+ id:'languages',
+ label:'Language Learning',
+ chip:'Languages',
+ icon:'languages',
+ pill:'Learn with native and certified speakers',
+ headline:['Speak from the first lesson.','Stop translating in your head.'],
+ blurb:'Live conversation practice with tutors who correct you while you speak, from everyday talk to exams and work.',
+ search:'Try “Spanish”, “business English” or “Yoruba”',
+ theme:{accent:'#c2562f',shell:'#26110a',bar:'#3a1c11',glow:'#ffd0b8'},
+ panel:{file:'spanish · b1',blocks:[
+  {type:'meters',items:[['Speaking','B1',58],['Listening','B2',76],['Words learned','1,450',62]]},
+  {type:'list',items:[
+   ['Today','Past tense, spoken only','idle'],
+   ['Pronunciation','rolled r — nearly there','warn'],
+   ['Homework','Describe your weekend aloud','ok']]}]},
+ mentor:{initials:'LR',name:'Lucía',role:'Spanish tutor',quote:'Say that again slower — and this time don’t translate it first.'},
+ next:{label:'Next conversation',when:'Tomorrow · 7:30 PM'},
 },
 {
  id:'ai',

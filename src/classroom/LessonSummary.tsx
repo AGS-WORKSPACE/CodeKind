@@ -1,12 +1,15 @@
-import{useEffect,useState}from'react';import{Link,useLocation,useParams}from'react-router-dom';import{BookOpen,CalendarDays,Check,Clock,Download,Lock,MessageCircle,Star}from'lucide-react';
+import{useEffect,useState}from'react';import{Link,useLocation,useParams}from'react-router-dom';import{BookOpen,CalendarDays,Check,Clock,Lock,Users}from'lucide-react';
+import{useAuth}from'../auth';
+import{useLoader}from'../hooks/use-payments';
 import{ledgerService}from'../services/ledger.service';
+import{scheduleService,type Booking}from'../services/schedule.service';
 import{formatMoney,relativeTime}from'../lib/money';
 import type{SessionPayment}from'../types/payments';
 
 /**
  * Ending a session is what settles its payment: the attended time becomes the bill, the unused
- * escrow goes back to the learner, and the tutor's share starts its 24-hour grace period. Doing it
- * here keeps the money in step with what actually happened in the room.
+ * escrow goes back to the learner, and the tutor's share starts its grace period. Doing it here
+ * keeps the money in step with what actually happened in the room.
  */
 function useSettledPayment(sessionId:string|undefined){
  const[payment,setPayment]=useState<SessionPayment|null>(null);
@@ -25,6 +28,9 @@ function useSettledPayment(sessionId:string|undefined){
  return{payment,error};
 }
 
+const when=(iso:string)=>new Date(iso).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+const first=(name:string|undefined)=>name?.split(' ')[0];
+
 function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:string|null;view:'student'|'tutor'}){
  if(error)return <div className="summary-billing"><p className="ledger-error">{error}</p></div>;
  if(!payment)return null;
@@ -32,7 +38,7 @@ function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:
  return <div className="summary-billing">
   <h2>{view==='tutor'?'What this session earned':'What you were charged'}</h2>
   <div className="billing-rows">
-   <p><span>Billed time</span><strong>{payment.billedMinutes} of {payment.scheduledMinutes} minutes</strong></p>
+   <p><span>Billed time</span><strong>{payment.billedMinutes??0} of {payment.scheduledMinutes} minutes</strong></p>
    <p><span>Rate</span><strong>{formatMoney(payment.hourlyRate,payment.currency)} / hour</strong></p>
    {view==='tutor'
     ?<><p><span>Session total</span><strong>{formatMoney(payment.grossAmount,payment.currency)}</strong></p>
@@ -48,19 +54,66 @@ function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:
   <Link className="text-link" to={view==='tutor'?'/tutor/earnings':'/student/payments'}>{view==='tutor'?'Open your earnings ledger':'Review or appeal this charge'}</Link>
  </div>;
 }
+
+/** The facts of the session, all read from the booking rather than written here. */
+function SessionFacts({booking,minutes}:{booking:Booking;minutes:number}){
+ return <div className="summary-meta">
+  <span><CalendarDays/> {when(booking.startsAt)}</span>
+  <span><Clock/> {minutes} minutes</span>
+  <span><BookOpen/> {booking.skill||booking.topic}</span>
+ </div>;
+}
+
 export function LessonSummary(){
  const{bookingId}=useParams();
+ const{user}=useAuth();
  const{state}=useLocation();
- const{view}=(state as{view?:'tutor'|'learner'}|null)??{};
- // The room says which side you were on, so a tutor lands on the tutor summary.
- const[tutorMode,setTutorMode]=useState(view==='tutor');
+ const booking=useLoader(()=>bookingId?scheduleService.get(bookingId):Promise.resolve(null),[bookingId]);
  const{payment,error}=useSettledPayment(bookingId);
+ // The booking says which side you are on; a demo tab has no session, so the room passes it along.
+ const tutorView=booking.data?booking.data.tutor.id===user?.id:(state as{view?:string}|null)?.view==='tutor';
+
  return <main className="lesson-summary">
-  <header><Link to="/">⌘ pairlore</Link><button onClick={()=>setTutorMode(!tutorMode)}>Preview {tutorMode?'student':'tutor'} view</button></header>
-  {tutorMode?<TutorSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="tutor"/>}/>:<StudentSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="student"/>}/>}
+  <header><Link to="/">⌘ pairlore</Link></header>
+  {booking.loading&&!booking.data?<section><p>Loading this session…</p></section>
+   :!booking.data?<section><p>{booking.error??'This session is not one of yours.'}</p><Link className="text-link" to="/">Back to pairlore</Link></section>
+   :tutorView?<TutorSummary booking={booking.data} payment={payment} error={error}/>
+   :<StudentSummary booking={booking.data} payment={payment} error={error}/>}
  </main>;
 }
-const first=(name:string|undefined)=>name?.split(' ')[0];
-function StudentSummary({payment,billing}:{payment:SessionPayment|null;billing:React.ReactNode}){const minutes=payment?.billedMinutes??payment?.scheduledMinutes??60;const tutor=payment?.payeeName??'Sarah Chen';return <section><div className="summary-check"><Check/></div><span className="eyebrow">LESSON COMPLETE</span><h1>Great work today{payment?`, ${first(payment.payerName)}`:''}!</h1><p>You completed a {minutes}-minute lesson with {tutor}.</p><div className="summary-meta"><span><CalendarDays/> {new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}</span><span><Clock/> {minutes} minutes</span><span><BookOpen/> {payment?.topic??'JavaScript Array Methods'}</span></div><SummaryContent/>{billing}<div className="summary-actions"><button className="btn"><Star/> Leave a review</button><button className="btn ghost">Book another lesson</button><button className="btn ghost"><MessageCircle/> Message {first(tutor)}</button><Link className="text-link" to="/student/dashboard">Return to dashboard</Link></div></section>}
-function TutorSummary({payment,billing}:{payment:SessionPayment|null;billing:React.ReactNode}){return <section><span className="eyebrow">COMPLETE LESSON SUMMARY</span><h1>How did {first(payment?.payerName)??'your learner'} do?</h1><p>Save a summary for the student and your private teaching records.</p>{billing}<form className="tutor-summary-form"><label>Topics covered<textarea defaultValue="filter(), callback predicates, pure functions, and edge cases"/></label><label>Student performance<select><option>Great progress</option><option>On track</option><option>Needs support</option></select></label><label>Areas to improve<textarea defaultValue="Practice recognizing empty input and validating function parameters."/></label><label>Homework<textarea defaultValue="Complete the active users exercise and add two edge-case tests."/></label><label>Private tutor notes<textarea placeholder="Only you can see these notes…"/></label><div><button type="button" className="btn ghost">Assign homework</button><button type="button" className="btn ghost">Schedule next lesson</button><button type="button" className="btn">Save summary</button></div></form></section>}
-function SummaryContent(){return <div className="summary-content"><article><h2>What we covered</h2><ul><li>How filter() evaluates each array item</li><li>Writing clear predicate callbacks</li><li>Keeping transformations immutable</li></ul></article><article><h2>Homework</h2><p>Complete the active users exercise and add two edge-case tests before your next lesson.</p></article><article><h2>Resources</h2><a href="#"><Download/> Array methods cheatsheet.pdf</a><a href="#"><BookOpen/> MDN Array.prototype.filter()</a></article></div>}
+
+type SideProps={booking:Booking;payment:SessionPayment|null;error:string|null};
+
+function StudentSummary({booking,payment,error}:SideProps){
+ const minutes=payment?.billedMinutes??booking.durationMinutes;
+ return <section>
+  <div className="summary-check"><Check/></div>
+  <span className="eyebrow">LESSON COMPLETE</span>
+  <h1>Great work today{first(booking.learner.name)?`, ${first(booking.learner.name)}`:''}!</h1>
+  <p>You spent {minutes} minutes on {booking.topic} with {booking.tutor.name}.</p>
+  <SessionFacts booking={booking} minutes={minutes}/>
+  <SessionBilling payment={payment} error={error} view="student"/>
+  <div className="summary-actions">
+   <Link className="btn" to={`/booking/${booking.tutor.id}`}>Book another lesson</Link>
+   <Link className="btn ghost" to="/student/lessons">My lessons</Link>
+   <Link className="text-link" to="/student/dashboard">Return to dashboard</Link>
+  </div>
+ </section>;
+}
+
+function TutorSummary({booking,payment,error}:SideProps){
+ const minutes=payment?.billedMinutes??booking.durationMinutes;
+ return <section>
+  <div className="summary-check"><Check/></div>
+  <span className="eyebrow">SESSION COMPLETE</span>
+  <h1>You taught {first(booking.learner.name)??'your learner'} for {minutes} minutes</h1>
+  <p>{booking.topic} · the session is closed and the money is settled.</p>
+  <SessionFacts booking={booking} minutes={minutes}/>
+  <SessionBilling payment={payment} error={error} view="tutor"/>
+  <div className="summary-actions">
+   <Link className="btn" to="/tutor/students"><Users size={15}/> My students</Link>
+   <Link className="btn ghost" to="/tutor/calendar">My calendar</Link>
+   <Link className="text-link" to="/tutor/dashboard">Return to dashboard</Link>
+  </div>
+ </section>;
+}

@@ -35,6 +35,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | My students (epic 6) | ✅ | Active and previous learners from `/tutor/students`. |
 | Live call connections | ✅ | Signaling service (PairloreSignal), tickets and STUN/TURN from `/sessions/:id/connect`. |
 | Wallets and payments (epic 7) | ✅ | Wallets, escrow, settlement, appeals, Flutterwave top-ups and withdrawals, and the admin money pages. |
+| Live sessions (epic 8) | ✅ | Ending completes the booking and settles it; the evidence is kept; the summary reads the booking. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -138,17 +139,24 @@ organisation wallets wait for epic 14.
 **Done when** booking holds real money, settling pays the tutor after the grace period, and demo
 wallets are deleted.
 
-## 8. Live sessions
+## 8. Live sessions ✅
 
 **UI**
-- Ending the session marks the booking completed and settles payment, using the evidence summary
-  (joins, leaves and media samples are already recorded).
-- Summary page reads the settled booking and payment.
+- The summary reads the booking and the settled payment: the real topic, skill, date, the other
+  person and the minutes billed. The demo lesson content, the invented tutor form and the
+  "preview the other view" toggle are gone.
+- Which side you see comes from the booking, not from a button.
 
 **Backend**
-- A `completed` transition on bookings, and a durable evidence row written with the settlement.
+- Ending a session completes the booking and settles it, and the evidence it was billed from is
+  kept in `session_evidence`. Session events are dropped after their retention; an appeal weeks
+  later still reads what the bill was made from, and a later join cannot rewrite it.
+- A sweep closes sessions neither side ended, an hour after they were due to finish, so escrow is
+  never held for ever.
 - Signaling and STUN/TURN are done: the room connects through PairloreSignal when the API has
   `SIGNAL_URL`, and demo tabs (`?as=`) still use the browser-only channel.
+
+**Left for later epics:** reviews (epic 9) and homework (epic 11) join the summary when they exist.
 
 ## 9. Reviews and ratings
 
