@@ -49,7 +49,7 @@ function Block({block}:{block:PanelBlock}){
     <span key={label} style={pct(height)}><i/><small>{label}</small></span>)}</div><figcaption>{block.caption}</figcaption></figure>;
   case 'list':
    return <ul className="showcase-list">{block.items.map(([label,tag,tone])=>
-    <li key={label}><span>{label}</span><b className={`tone tone-${tone}`}>{tag}</b></li>)}</ul>;
+    <li key={label} className={`row-${tone}`}><span>{label}</span><b className={`tone tone-${tone}`}>{tag}</b></li>)}</ul>;
   case 'swatches':
    return <div className="showcase-swatches">{block.items.map(([label,color])=>
     <span key={label}><i style={{background:color}}/>{label}</span>)}</div>;
@@ -120,7 +120,7 @@ export function HeroShowcase(){
   </div>
   <div className="hero-panel">
    <div className="showcase-window" key={domain.id}>
-    <div className="window-bar"><span/><span/><span/><small>{domain.panel.file}</small></div>
+    <div className="window-bar"><i className="live-dot"/><small>{domain.panel.file}</small></div>
     <div className="showcase-body">{domain.panel.blocks.map((block,i)=><Block key={i} block={block}/>)}</div>
     <div className="mentor-bubble">
      <div className="avatar sm">{domain.mentor.initials}</div>

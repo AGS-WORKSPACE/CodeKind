@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Link,useLocation,useNavigate} from 'react-router-dom';
-import {ArrowRight,BookOpen,CalendarDays,Check,DashboardShell,MessageCircle,Search,ShieldCheck,TutorCard,Users,Zap} from './components';
+import {ArrowRight,BookOpen,CalendarDays,Check,DashboardShell,Search,ShieldCheck,TutorCard,Users,Zap} from './components';
 import {Building2,GraduationCap,UserRound} from 'lucide-react';
 import {useAuth} from './auth';
 import {useLoader} from './hooks/use-payments';
@@ -76,17 +76,5 @@ export function BecomeTutor(){return <main><section className="tutor-apply-hero"
 /* A signed-in learner teaches from the same account, so they add the workspace instead of signing up again. */
 function TeachWithThisAccount(){const{workspaces,addWorkspace,chooseWorkspace}=useAuth();const navigate=useNavigate();const[busy,setBusy]=useState(false);const[error,setError]=useState('');const holds=workspaces.includes('TUTOR');const start=async()=>{setBusy(true);setError('');try{await(holds?chooseWorkspace('TUTOR'):addWorkspace('TUTOR'));navigate(holds?'/tutor/dashboard':'/tutor/onboarding')}catch(e){setError(e instanceof Error?e.message:'Could not start teaching');setBusy(false)}};return <div className="apply-options"><article><span className="apply-icon"><GraduationCap/></span><h3>{holds?'You already teach on Pairlore':'Teach with your account'}</h3><p>{holds?'Switch to your teaching workspace to manage your profile and sessions.':'Keep one login for learning and teaching. Your profile stays hidden until it’s approved.'}</p>{error&&<div className="form-error">{error}</div>}<button type="button" className="btn wide" disabled={busy} onClick={start}>{busy?'Opening…':holds?'Switch to teaching':'Start your tutor application'} <ArrowRight/></button></article></div>}
 function ApplyOptions(){const{user}=useAuth();if(user?.role==='STUDENT')return <TeachWithThisAccount/>;if(user?.role==='TUTOR')return <div className="apply-options"><article><span className="apply-icon"><GraduationCap/></span><h3>You’re signed in as a tutor</h3><p>Pick up your application where you left off. Your profile stays hidden until it’s approved.</p><Link className="btn wide" to="/tutor/onboarding">Continue your application <ArrowRight/></Link></article></div>;if(user?.role==='ORGANIZATION')return <div className="apply-options"><article><span className="apply-icon"><Building2/></span><h3>Your organisation is set up</h3><p>Invite trainers and schedule their sessions from your organisation workspace.</p><Link className="btn wide" to="/org/dashboard">Open organisation dashboard <ArrowRight/></Link></article></div>;return <div className="apply-options"><article><span className="apply-icon"><UserRound/></span><h3>Teach as an individual</h3><p>Set your own rate and schedule.</p><ol><li>Create your tutor account</li><li>Complete the 6-step application: experience, skills, profiles and rates</li><li>Go live once we’ve approved your profile</li></ol><Link className="btn wide" to="/signup?role=tutor">Apply as an individual <ArrowRight/></Link></article><article><span className="apply-icon"><Building2/></span><h3>Register your organisation</h3><p>Bring your whole training team on board.</p><ol><li>Create your organisation account</li><li>Invite your trainers by email</li><li>Schedule their sessions from one shared calendar</li></ol><Link className="btn ghost wide" to="/signup?role=tutor&as=org">Register your organisation <ArrowRight/></Link></article></div>}
-
-/* Messaging has no backend yet, so this page says what to do instead. It comes back with epic 10. */
-export function Messages(){
- const{pathname}=useLocation();
- const role=pathname.startsWith('/tutor/')?'tutor':'student';
- return <DashboardShell role={role}>
-  <div className="workspace-title"><div><h1>Messages</h1><p>Talking to each other between sessions is not built yet.</p></div></div>
-  <section className="workspace-empty"><MessageCircle/><h3>No messaging yet</h3>
-   <p>Until it arrives, everything you agree happens in the session itself, and the notes on a booking travel with it. {role==='student'?'Your tutor can see the topic and notes you added when booking.':'The topic and notes your learner wrote are on the booking.'}</p>
-   <Link className="btn" to={`/${role}/lessons`}><CalendarDays size={16}/> Open my lessons</Link></section>
- </DashboardShell>;
-}
 
 export function NotFound(){return <main className="placeholder"><div className="path-icon"><Search/></div><span className="eyebrow">404 · PAGE NOT FOUND</span><h1>Page not found</h1><p>The page may have moved, or the link may be out of date.</p><div className="not-found-actions"><Link to="/" className="btn ghost">Go home</Link><Link to="/tutors" className="btn">Find tutors</Link></div></main>}

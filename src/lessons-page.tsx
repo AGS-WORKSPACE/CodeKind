@@ -6,6 +6,7 @@ import{PageTitle}from'./workspace-pages';
 import{useToast}from'./ui-feedback';
 import{useLoader}from'./hooks/use-payments';
 import{FreeTimes,timeLabel}from'./free-times';
+import{MessageButton}from'./messages-page';
 import{endsAt,scheduleService,type Booking,type LessonView}from'./services/schedule.service';
 
 const TABS:[LessonView,string][]=[['upcoming','Upcoming'],['past','Past'],['cancelled','Cancelled']];
@@ -54,10 +55,11 @@ function LessonCard({booking,teaching,onCancel,onMove}:{booking:Booking;teaching
    {booking.notes&&<small>Notes: {booking.notes}</small>}
    {booking.cancelReason&&<small>Reason: {booking.cancelReason}</small>}
   </div>
-  {upcoming&&<div className="lesson-actions">
-   <Link to={`/lesson/${booking.id}/lobby`} className="btn">{started?'Join now':teaching?'Open lobby':'Join lesson'}</Link>
-   {!started&&<><button type="button" className="btn ghost" onClick={onMove}>Reschedule</button><button type="button" className="text-danger" onClick={onCancel}>Cancel</button></>}
-  </div>}
+  <div className="lesson-actions">
+   {upcoming&&<Link to={`/lesson/${booking.id}/lobby`} className="btn">{started?'Join now':teaching?'Open lobby':'Join lesson'}</Link>}
+   <MessageButton userId={other.id} label={`Message ${other.name.split(' ')[0]}`}/>
+   {upcoming&&!started&&<><button type="button" className="btn ghost" onClick={onMove}>Reschedule</button><button type="button" className="text-danger" onClick={onCancel}>Cancel</button></>}
+  </div>
  </article>;
 }
 

@@ -37,6 +37,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Wallets and payments (epic 7) | ✅ | Wallets, escrow, settlement, appeals, Flutterwave top-ups and withdrawals, and the admin money pages. |
 | Live sessions (epic 8) | ✅ | Ending completes the booking and settles it; the evidence is kept; the summary reads the booking. |
 | Reviews and ratings (epic 9) | ✅ | Learners review a finished session; ratings on cards, profiles, search and the tutor dashboard. |
+| Messages (epic 10) | ✅ | Conversations between two people who share a session, with unread counts and notifications. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
@@ -183,22 +184,30 @@ The pages that showed invented content now either read the API or say what is mi
   reviews. The invented testimonials, the fake customer logo strip and the "4.9 from 12,000+
   sessions" claim are gone; `GET /stats` supplies the numbers, and each one is hidden until there
   is something to count.
-- **Messages, assignments and learning paths** keep their routes and say plainly that they are not
+- **Assignments and learning paths** keep their routes and say plainly that they are not
   built yet, with the fake conversation, demo assignments and invented curriculum deleted. They
-  come back with epics 10, 11 and 12.
+  come back with epics 11 and 12. Messages arrived with epic 10.
 - **The admin control centre** shows real counts, applications waiting and open appeals. Every
   section still without a backend says so rather than showing a demo table, and the mock admin
   repository is deleted. Epic 15 fills them in.
 - Dead demo components (`AdminDashboard`, the old `Booking` flow, the old `LessonRoom`,
   `AdminManagement`) are deleted with the mock data they read.
 
-## 10. Messages
+## 10. Messages ✅
 
 **UI**
-- Conversation list, history and sending on `/student/messages` and `/tutor/messages`.
-- A new message raises a notification.
+- `/student/messages` and `/tutor/messages` list everyone you teach or learn from, with the last
+  thing said and what is unread. `/…/messages/:id` opens one thread.
+- "Message" buttons on a lesson and on My Students open the thread with that person.
+- The open page polls every ten seconds, so a reply arrives without a reload. Live delivery is a
+  later change; nothing about the UI has to move for it.
 
-**Backend:** conversations and messages; realtime delivery later.
+**Backend**
+- `GET /conversations`, `POST /conversations` (open or find one), `GET /conversations/:id/messages`
+  (oldest first, and reading marks it read), `POST /conversations/:id/messages`.
+- A conversation only exists between two people who share a booking, so strangers cannot write to
+  each other. Read state is one timestamp per side.
+- The first message after the other person is up to date raises a notification; a burst raises one.
 
 ## 11. Assignments
 

@@ -6,6 +6,7 @@ import{useLoader}from'./hooks/use-payments';
 import{scheduleService,type Student,type StudentView}from'./services/schedule.service';
 import{PageTitle}from'./workspace-pages';
 import{initials}from'./tutor-dashboard';
+import{MessageButton}from'./messages-page';
 import{relativeTime}from'./lib/money';
 
 const PER_PAGE=20;
@@ -48,6 +49,6 @@ function StudentRow({student}:{student:Student}){
   {student.nextAt
    ?<span><small>Next session</small>{dateOf(student.nextAt)} ({relativeTime(student.nextAt)})</span>
    :<span><small>Last session</small>{student.lastAt?dateOf(student.lastAt):'—'}</span>}
-  <Link className="text-link" to="/tutor/lessons">Lessons</Link>
+  <span className="student-actions"><MessageButton userId={student.id} className="text-link"/><Link className="text-link" to="/tutor/lessons">Lessons</Link></span>
  </article>;
 }

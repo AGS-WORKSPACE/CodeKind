@@ -30,7 +30,9 @@
 /* Right-hand panel: one shell, five interchangeable block types. */
 .showcase-window{background:var(--shell);border-radius:20px;padding-bottom:20px;box-shadow:20px 24px 0 var(--glow);color:#dae9e3;overflow:hidden;animation:panel-in .55s cubic-bezier(.2,.7,.3,1) both;transition:background .45s,box-shadow .45s}
 @keyframes panel-in{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
-.showcase-window .window-bar{background:var(--bar);transition:background .45s}
+.showcase-window .window-bar{background:var(--bar);transition:background .45s;height:46px;display:flex;align-items:center;gap:10px;padding:0 18px}
+.window-bar .live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
+.showcase-window .window-bar small{margin:0;font:11px DM Mono,ui-monospace,monospace;color:#b7cac4;letter-spacing:.02em}
 .showcase-body{padding:28px 30px 22px;display:grid;gap:22px;min-height:236px;align-content:start}
 
 .showcase-code{margin:0;font:14px/2 DM Mono,ui-monospace,monospace;white-space:pre-wrap;word-break:break-word}
@@ -42,11 +44,13 @@
 .tok-str{color:#f3ce72}
 .tok-cm{color:#7d918b}
 
-.showcase-meters{display:grid;gap:14px}
-.meter{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font:11px DM Mono,ui-monospace,monospace;color:#a9bdb6}
-.meter b{color:#fff;font-size:12px}
-.meter i{grid-column:1/-1;height:5px;border-radius:5px;background:#ffffff1f;overflow:hidden}
-.meter i::after{content:'';display:block;height:100%;width:var(--pct);border-radius:5px;background:var(--glow);animation:meter-fill .8s cubic-bezier(.2,.7,.3,1) both}
+.showcase-meters{display:grid;gap:18px}
+.meter{display:grid;grid-template-columns:1fr auto;gap:7px 12px;align-items:baseline}
+.meter span{font:10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.12em;color:#ffffff73}
+.meter b{color:#fff;font:600 15px/1 inherit;letter-spacing:-.01em}
+/* A gauge line rather than a pill: ticks behind, the reading drawn over them. */
+.meter i{grid-column:1/-1;height:9px;background:repeating-linear-gradient(90deg,#ffffff26 0 1px,transparent 1px 7px);position:relative}
+.meter i::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:var(--pct);background:var(--glow);box-shadow:0 0 12px color-mix(in srgb,var(--glow) 55%,transparent);animation:meter-fill .8s cubic-bezier(.2,.7,.3,1) both;transform-origin:left}
 @keyframes meter-fill{from{transform:scaleX(0);transform-origin:left}to{transform:none}}
 
 .showcase-bars{margin:0}
@@ -57,9 +61,17 @@
 .bar-row small{font:10px DM Mono,ui-monospace,monospace;color:#93a8a2}
 .showcase-bars figcaption{margin-top:14px;font:10px DM Mono,ui-monospace,monospace;color:#93a8a2;letter-spacing:.04em}
 
-.showcase-list{list-style:none;margin:0;padding:0;display:grid;gap:9px}
-.showcase-list li{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#ffffff0f;border-radius:9px;padding:11px 13px;font-size:12.5px}
-.tone{font:500 10px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;border-radius:20px;white-space:nowrap}
+.showcase-list{list-style:none;margin:0;padding:0;display:grid;counter-reset:finding}
+/* A report, not a stack of cards: hairline rows, a numbered gutter and a rail that carries the tone. */
+.showcase-list li{counter-increment:finding;position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;padding:12px 0 12px 14px;font-size:12.5px;border-top:1px solid #ffffff17}
+.showcase-list li:first-child{border-top:0}
+.showcase-list li::before{content:counter(finding,decimal-leading-zero);font:10px DM Mono,ui-monospace,monospace;color:#ffffff40;letter-spacing:.06em}
+.showcase-list li::after{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2px;background:#ffffff26}
+.showcase-list .row-risk::after{background:#ff5c7a}
+.showcase-list .row-warn::after{background:#ffb54d}
+.showcase-list .row-ok::after{background:#2ecf8b}
+.tone{display:inline-flex;align-items:center;gap:7px;font:500 9.5px DM Mono,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;background:none!important;padding:0}
+.tone::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
 .tone-ok{background:#2ecf8b26;color:#7fe3b6}
 .tone-warn{background:#ffb54d26;color:#ffcf8f}
 .tone-risk{background:#ff5c7a26;color:#ff9fb2}
