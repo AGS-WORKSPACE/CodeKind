@@ -6,7 +6,6 @@ import{PageTitle}from'./workspace-pages';
 import{useToast}from'./ui-feedback';
 import{useLoader}from'./hooks/use-payments';
 import{FreeTimes,timeLabel}from'./free-times';
-import{ledgerService}from'./services/ledger.service';
 import{endsAt,scheduleService,type Booking,type LessonView}from'./services/schedule.service';
 
 const TABS:[LessonView,string][]=[['upcoming','Upcoming'],['past','Past'],['cancelled','Cancelled']];
@@ -82,8 +81,6 @@ function CancelDialog({booking,teaching,onClose,onDone}:{booking:Booking;teachin
   try{
    await scheduleService.cancel(booking.id,reason);
    // Money still lives in the demo ledger, so return any escrow it holds for this session.
-   const payment=await ledgerService.bySession(booking.id).catch(()=>null);
-   if(payment?.status==='HELD')await ledgerService.cancel(payment.id,reason||'Session cancelled').catch(()=>{});
    toast(`Session cancelled. ${other.name.split(' ')[0]} has been told.`);
    await onDone();
   }catch(problem){setError(problem instanceof Error?problem.message:'The session could not be cancelled');setBusy(false)}

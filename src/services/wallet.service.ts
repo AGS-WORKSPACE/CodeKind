@@ -1,29 +1,24 @@
-import{api,offlineFallback}from'./api';
-import{walletRepository}from'../mocks/wallet.repository';
-import type{CurrencyCode,TopUp,Wallet,WalletEntry,WalletOwnerType,Withdrawal}from'../types/payments';
+import{api}from'./api';
+import type{Bank,CurrencyCode,PaymentMethods,TopUp,Wallet,WalletEntry,Withdrawal,WithdrawalDestination}from'../types/payments';
 
+/* Money has no offline fallback on purpose: a balance the backend did not send is not a balance.
+   Every screen here shows the error instead. */
 export const walletService={
- list:(ownerId:string)=>offlineFallback(
-  ()=>api<{wallets:Wallet[]}>(`/wallets?ownerId=${ownerId}`).then(r=>r.wallets),
-  ()=>walletRepository.list(ownerId)),
+ list:()=>api<{wallets:Wallet[]}>('/wallets').then(r=>r.wallets),
 
- entries:(ownerId:string,currency?:CurrencyCode)=>offlineFallback(
-  ()=>api<{entries:WalletEntry[]}>(`/wallets/entries?ownerId=${ownerId}${currency?`&currency=${currency}`:''}`).then(r=>r.entries),
-  ()=>walletRepository.entries(ownerId,currency)),
+ entries:(currency?:CurrencyCode)=>api<{entries:WalletEntry[]}>(`/wallets/entries${currency?`?currency=${currency}`:''}`).then(r=>r.entries),
 
- withdrawals:(ownerId:string)=>offlineFallback(
-  ()=>api<{withdrawals:Withdrawal[]}>(`/wallets/withdrawals?ownerId=${ownerId}`).then(r=>r.withdrawals),
-  ()=>walletRepository.withdrawals(ownerId)),
+ addCurrency:(currency:CurrencyCode)=>api<{wallet:Wallet}>('/wallets',{method:'POST',body:JSON.stringify({currency})}).then(r=>r.wallet),
 
- addCurrency:(ownerId:string,ownerType:WalletOwnerType,currency:CurrencyCode)=>offlineFallback(
-  ()=>api<{wallet:Wallet}>('/wallets',{method:'POST',body:JSON.stringify({ownerId,ownerType,currency})}).then(r=>r.wallet),
-  ()=>walletRepository.addCurrency(ownerId,ownerType,currency)),
+ /** Starts a top-up. The wallet is credited only once the provider confirms the payment. */
+ topUp:(currency:CurrencyCode,amount:number)=>api<{topUp:TopUp;paymentUrl:string}>('/wallets/top-ups',{method:'POST',body:JSON.stringify({currency,amount})}),
+ topUps:()=>api<{topUps:TopUp[]}>('/wallets/top-ups').then(r=>r.topUps),
 
- topUp:(ownerId:string,ownerType:WalletOwnerType,currency:CurrencyCode,amount:number,method:string)=>offlineFallback(
-  ()=>api<{topUp:TopUp}>('/wallets/top-ups',{method:'POST',body:JSON.stringify({ownerId,currency,amount,method})}).then(r=>r.topUp),
-  ()=>walletRepository.topUp(ownerId,ownerType,currency,amount,method)),
+ withdraw:(currency:CurrencyCode,amount:number,destination:WithdrawalDestination)=>
+  api<{withdrawal:Withdrawal}>('/wallets/withdrawals',{method:'POST',body:JSON.stringify({currency,amount,destination})}).then(r=>r.withdrawal),
+ withdrawals:()=>api<{withdrawals:Withdrawal[]}>('/wallets/withdrawals').then(r=>r.withdrawals),
 
- withdraw:(ownerId:string,currency:CurrencyCode,amount:number,destination:string)=>offlineFallback(
-  ()=>api<{withdrawal:Withdrawal}>('/wallets/withdrawals',{method:'POST',body:JSON.stringify({ownerId,currency,amount,destination})}).then(r=>r.withdrawal),
-  ()=>walletRepository.withdraw(ownerId,currency,amount,destination)),
+ /** Which currencies money can actually move in, and who moves it. */
+ methods:(currency?:CurrencyCode)=>api<PaymentMethods>(`/payments/methods${currency?`?currency=${currency}`:''}`),
+ banks:(currency:CurrencyCode,country='NG')=>api<{banks:Bank[]}>(`/payments/banks?currency=${currency}&country=${country}`).then(r=>r.banks),
 };

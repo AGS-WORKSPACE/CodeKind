@@ -3021,3 +3021,10 @@
   .dash-main .student-table.live article > span:last-of-type { display: block; grid-column: 2; }
   .dash-main .student-table.live .text-link { display: none; }
 }
+
+/* Admin wallet credits: the person search spans the form. */
+.admin-page .credit-search, .admin-page .credit-results { grid-column: 1 / -1; }
+.credit-results { display: flex; flex-wrap: wrap; gap: 8px; }
+.credit-results button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 11px; border: 1px solid #d7e1dc; border-radius: 8px; background: #fff; font-size: 10px; }
+.credit-results button small { color: #71827b; }
+.credit-results .credit-chosen { flex-direction: row; align-items: center; gap: 6px; border-color: #2e8763; color: #2e8763; }

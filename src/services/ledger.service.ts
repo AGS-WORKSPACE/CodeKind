@@ -1,7 +1,8 @@
-import{api,offlineFallback}from'./api';
-import{ledgerRepository,type LedgerQuery}from'../mocks/ledger.repository';
-import type{AppealInput,EscrowInput,ResolutionInput}from'../mocks/payments.store';
-import type{Appeal,EarningsSummary,SessionPayment}from'../types/payments';
+import{api}from'./api';
+import type{Appeal,AppealReason,EarningsSummary,SessionPayment}from'../types/payments';
+
+export type LedgerQuery={status?:SessionPayment['status'];asPayee?:boolean};
+export type AppealInput={sessionPaymentId:string;reason:AppealReason;details:string};
 
 const query=(params:Record<string,string|undefined>)=>{
  const search=new URLSearchParams();
@@ -9,58 +10,27 @@ const query=(params:Record<string,string|undefined>)=>{
  return search.toString();
 };
 
+/* The session ledger. Ownership comes from the session cookie, so a person only ever sees their
+   own side; the admin pages use admin-payments.service. */
 export const ledgerService={
- payments:(filters:LedgerQuery={})=>offlineFallback(
-  ()=>api<{items:SessionPayment[]}>(`/session-payments?${query(filters)}`).then(r=>r.items),
-  ()=>ledgerRepository.payments(filters)),
+ payments:(filters:LedgerQuery={},userId?:string)=>
+  api<{items:SessionPayment[]}>(`/session-payments?${query({status:filters.status,payeeId:filters.asPayee?userId:undefined})}`).then(r=>r.items),
 
- payment:(id:string)=>offlineFallback(
-  ()=>api<{payment:SessionPayment}>(`/session-payments/${id}`).then(r=>r.payment),
-  ()=>ledgerRepository.payment(id)),
+ payment:(id:string)=>api<{payment:SessionPayment}>(`/session-payments/${id}`).then(r=>r.payment),
 
- bySession:(sessionId:string)=>offlineFallback(
-  ()=>api<{payment:SessionPayment|null}>(`/session-payments/by-session/${sessionId}`).then(r=>r.payment),
-  ()=>ledgerRepository.bySession(sessionId)),
+ bySession:(sessionId:string)=>api<{payment:SessionPayment|null}>(`/session-payments/by-session/${sessionId}`).then(r=>r.payment),
 
- /** Booking: escrows the scheduled duration against the payer's wallet. */
- create:(input:EscrowInput)=>offlineFallback(
-  ()=>api<{payment:SessionPayment}>('/session-payments',{method:'POST',body:JSON.stringify(input)}).then(r=>r.payment),
-  ()=>ledgerRepository.create(input)),
+ earnings:()=>api<{summaries:EarningsSummary[]}>('/session-payments/earnings').then(r=>r.summaries),
 
- /** End of session: bills the attended time and starts the 24-hour grace period. */
- settle:(paymentId:string,attendedSeconds:number)=>offlineFallback(
-  ()=>api<{payment:SessionPayment}>(`/session-payments/${paymentId}/settle`,{method:'POST',body:JSON.stringify({attendedSeconds})}).then(r=>r.payment),
-  ()=>ledgerRepository.settle(paymentId,attendedSeconds)),
+ /** Ending a session bills the time both people were in the room and starts the grace period. */
+ endSession:(sessionId:string)=>api<{payment:SessionPayment}>(`/sessions/${sessionId}/end`,{method:'POST'}).then(r=>r.payment),
 
- cancel:(paymentId:string,reason:string)=>offlineFallback(
-  ()=>api<{payment:SessionPayment}>(`/session-payments/${paymentId}/cancel`,{method:'POST',body:JSON.stringify({reason})}).then(r=>r.payment),
-  ()=>ledgerRepository.cancel(paymentId,reason)),
+ appeals:(asRespondent=false,userId?:string)=>
+  api<{items:Appeal[]}>(`/appeals?${query({respondentId:asRespondent?userId:undefined})}`).then(r=>r.items),
 
- earnings:(payeeId:string)=>offlineFallback(
-  ()=>api<{summaries:EarningsSummary[]}>(`/session-payments/earnings?payeeId=${payeeId}`).then(r=>r.summaries),
-  ()=>ledgerRepository.earnings(payeeId)),
+ appeal:(id:string)=>api<{appeal:Appeal}>(`/appeals/${id}`).then(r=>r.appeal),
 
- appeals:(filters:{appellantId?:string;respondentId?:string;status?:Appeal['status']}={})=>offlineFallback(
-  ()=>api<{items:Appeal[]}>(`/appeals?${query(filters)}`).then(r=>r.items),
-  ()=>ledgerRepository.appeals(filters)),
+ openAppeal:(input:AppealInput)=>api<{appeal:Appeal}>('/appeals',{method:'POST',body:JSON.stringify(input)}).then(r=>r.appeal),
 
- appeal:(id:string)=>offlineFallback(
-  ()=>api<{appeal:Appeal}>(`/appeals/${id}`).then(r=>r.appeal),
-  ()=>ledgerRepository.appeal(id)),
-
- openAppeal:(input:AppealInput)=>offlineFallback(
-  ()=>api<{appeal:Appeal}>('/appeals',{method:'POST',body:JSON.stringify(input)}).then(r=>r.appeal),
-  ()=>ledgerRepository.openAppeal(input)),
-
- withdrawAppeal:(appealId:string)=>offlineFallback(
-  ()=>api<{appeal:Appeal}>(`/appeals/${appealId}/withdraw`,{method:'POST'}).then(r=>r.appeal),
-  ()=>ledgerRepository.withdrawAppeal(appealId)),
-
- /** Admin only: pays either side, or both, out of the money the session collected. */
- resolveAppeal:(appealId:string,input:ResolutionInput)=>offlineFallback(
-  ()=>api<{appeal:Appeal}>(`/admin/appeals/${appealId}/resolve`,{method:'POST',body:JSON.stringify(input)}).then(r=>r.appeal),
-  ()=>ledgerRepository.resolveAppeal(appealId,input)),
-
- /* Preview affordance with no backend counterpart: the server matures rows on a schedule. */
- fastForwardGrace:(paymentId:string)=>ledgerRepository.fastForwardGrace(paymentId),
+ withdrawAppeal:(appealId:string)=>api<{appeal:Appeal}>(`/appeals/${appealId}/withdraw`,{method:'POST'}).then(r=>r.appeal),
 };

@@ -2,10 +2,10 @@ import{useMemo,useState}from'react';
 import{ArrowDownLeft,ArrowUpRight,Banknote,ChevronLeft,ChevronRight,Landmark,Lock,Plus,RefreshCw,Search,Wallet as WalletIcon}from'lucide-react';
 import{DashboardShell}from'./components';
 import{useToast}from'./ui-feedback';
-import{useLoader,useOwner,type Owner,type WorkspaceRole}from'./hooks/use-payments';
+import{useLoader,type WorkspaceRole}from'./hooks/use-payments';
 import{walletService}from'./services/wallet.service';
 import{CURRENCIES,CURRENCY_CODES,formatMoney,formatDateTime,toMinor}from'./lib/money';
-import type{CurrencyCode,Wallet,WalletEntry}from'./types/payments';
+import type{Bank,CurrencyCode,Wallet,WalletEntry}from'./types/payments';
 
 const entryLabel:Record<WalletEntry['kind'],string>={
  TOPUP:'Top-up',WITHDRAWAL:'Withdrawal',HOLD:'Escrow held',RELEASE:'Escrow returned',CAPTURE:'Session charge',
@@ -14,7 +14,6 @@ const entryLabel:Record<WalletEntry['kind'],string>={
 const WALLET_PAGE_SIZE=8;
 
 export function WalletPage({role}:{role:WorkspaceRole}){
- const owner=useOwner(role);
  const toast=useToast();
  const[dialog,setDialog]=useState<'TOPUP'|'WITHDRAW'|'ADD_CURRENCY'|null>(null);
  const[filter,setFilter]=useState<CurrencyCode|'ALL'>('ALL');
@@ -22,10 +21,13 @@ export function WalletPage({role}:{role:WorkspaceRole}){
  const[query,setQuery]=useState('');
  const[page,setPage]=useState(1);
 
- const wallets=useLoader(()=>walletService.list(owner.ownerId),[owner.ownerId]);
- const entries=useLoader(()=>walletService.entries(owner.ownerId),[owner.ownerId]);
- const withdrawals=useLoader(()=>walletService.withdrawals(owner.ownerId),[owner.ownerId]);
- const refresh=()=>Promise.all([wallets.reload(),entries.reload(),withdrawals.reload()]);
+ const wallets=useLoader(()=>walletService.list(),[]);
+ const entries=useLoader(()=>walletService.entries(),[]);
+ const withdrawals=useLoader(()=>walletService.withdrawals(),[]);
+ const topUps=useLoader(()=>walletService.topUps(),[]);
+ const methods=useLoader(()=>walletService.methods(),[]);
+ const refresh=()=>Promise.all([wallets.reload(),entries.reload(),withdrawals.reload(),topUps.reload()]);
+ const payable=methods.data?.currencies??[];
 
  const held=wallets.data??[];
  const visible=useMemo(()=>{
@@ -40,6 +42,10 @@ export function WalletPage({role}:{role:WorkspaceRole}){
  const currentPage=Math.min(page,pageCount);
  const pageEntries=visible.slice((currentPage-1)*WALLET_PAGE_SIZE,currentPage*WALLET_PAGE_SIZE);
  const missing=CURRENCY_CODES.filter(code=>!held.some(w=>w.currency===code));
+
+ if(role==='org')return <DashboardShell role={role}>
+  <div className="dash-welcome"><div><h1>Organisation wallet</h1><p>Organisation money is not here yet. Trainers are paid through their own wallets for now.</p></div></div>
+ </DashboardShell>;
 
  return <DashboardShell role={role}>
   <div className="dash-welcome wallet-page-head">
@@ -101,6 +107,19 @@ export function WalletPage({role}:{role:WorkspaceRole}){
   </div>
 
   <div className="panel wallet-panel">
+   <h3>Top-ups</h3>
+   {!topUps.data?.length?<p className="org-empty">No top-ups yet. Add money to pay for sessions.</p>
+    :<table className="org-table"><thead><tr><th>Method</th><th>Amount</th><th>Status</th><th>Started</th></tr></thead><tbody>
+     {topUps.data.map(item=><tr key={item.id}>
+      <td><strong>{item.method||'Card or transfer'}</strong><span>{item.id}</span></td>
+      <td className="amount">{formatMoney(item.amount,item.currency)}</td>
+      <td><span className={`ledger-status ${item.status.toLowerCase()}`}>{item.status.toLowerCase()}</span></td>
+      <td>{formatDateTime(item.createdAt)}</td>
+     </tr>)}
+    </tbody></table>}
+  </div>
+
+  <div className="panel wallet-panel">
    <h3>Withdrawals</h3>
    {!withdrawals.data?.length?<p className="org-empty">No withdrawals requested yet.</p>
     :<table className="org-table"><thead><tr><th>Destination</th><th>Amount</th><th>Status</th><th>Requested</th></tr></thead><tbody>
@@ -113,22 +132,17 @@ export function WalletPage({role}:{role:WorkspaceRole}){
     </tbody></table>}
   </div>
 
-  {dialog==='TOPUP'&&<MoneyDialog
-   title="Add money" confirmLabel="Add money" owner={owner} wallets={held} allowNewCurrency
-   fieldLabel="Payment method" fieldPlaceholder="Visa ending 4242" defaultField="Visa ending 4242"
-   onClose={()=>setDialog(null)}
-   onSubmit={async(currency,amount,method)=>{await walletService.topUp(owner.ownerId,owner.ownerType,currency,amount,method);await refresh();toast(`Added ${formatMoney(amount,currency)}`)}}/>}
+  {dialog==='TOPUP'&&<TopUpDialog
+   wallets={held} payable={payable} onClose={()=>setDialog(null)}
+   onStarted={()=>toast('Finish the payment on the page that opens')}/>}
 
-  {dialog==='WITHDRAW'&&<MoneyDialog
-   title="Withdraw funds" confirmLabel="Request withdrawal" owner={owner} wallets={held}
-   fieldLabel="Destination" fieldPlaceholder="Bank account ending 4872" defaultField="Bank account ending 4872"
-   note="Escrow held against booked sessions cannot be withdrawn until those sessions settle."
-   onClose={()=>setDialog(null)}
-   onSubmit={async(currency,amount,destination)=>{await walletService.withdraw(owner.ownerId,currency,amount,destination);await refresh();toast('Withdrawal requested')}}/>}
+  {dialog==='WITHDRAW'&&<WithdrawDialog
+   wallets={held} payable={payable} onClose={()=>setDialog(null)}
+   onDone={async amount=>{await refresh();toast(`Withdrawal of ${amount} requested`)}}/>}
 
   {dialog==='ADD_CURRENCY'&&<AddCurrencyDialog
    options={missing} onClose={()=>setDialog(null)}
-   onSubmit={async currency=>{await walletService.addCurrency(owner.ownerId,owner.ownerType,currency);await refresh();toast(`${currency} wallet added`)}}/>}
+   onSubmit={async currency=>{await walletService.addCurrency(currency);await refresh();toast(`${currency} wallet added`)}}/>}
  </DashboardShell>;
 }
 
@@ -147,16 +161,54 @@ function WalletCard({wallet,onReceive,onSend}:{wallet:Wallet;onReceive:()=>void;
  </article>;
 }
 
-function MoneyDialog({title,confirmLabel,owner,wallets,fieldLabel,fieldPlaceholder,defaultField,note,allowNewCurrency=false,onClose,onSubmit}:{
- title:string;confirmLabel:string;owner:Owner;wallets:Wallet[];fieldLabel:string;fieldPlaceholder:string;defaultField:string;note?:string;allowNewCurrency?:boolean;
- onClose:()=>void;onSubmit:(currency:CurrencyCode,amount:number,field:string)=>Promise<void>;
-}){
- const options=allowNewCurrency?CURRENCY_CODES:wallets.map(w=>w.currency);
- const[currency,setCurrency]=useState<CurrencyCode>(wallets.find(w=>w.isDefault)?.currency??options[0]??'USD');
+/** Adding money hands over to the payment provider; the wallet is credited when they confirm it. */
+function TopUpDialog({wallets,payable,onClose,onStarted}:{wallets:Wallet[];payable:CurrencyCode[];onClose:()=>void;onStarted:()=>void}){
+ const options=payable.length?payable:wallets.map(w=>w.currency);
+ const[currency,setCurrency]=useState<CurrencyCode>(options[0]??'NGN');
  const[amount,setAmount]=useState('');
- const[field,setField]=useState(defaultField);
  const[busy,setBusy]=useState(false);
  const[error,setError]=useState<string|null>(null);
+
+ const submit=async(event:React.FormEvent)=>{
+  event.preventDefault();
+  const minor=toMinor(amount,currency);
+  if(minor<=0){setError('Enter an amount greater than zero.');return}
+  setBusy(true);
+  try{
+   const{paymentUrl}=await walletService.topUp(currency,minor);
+   onStarted();
+   window.location.href=paymentUrl;
+  }catch(problem){setError(problem instanceof Error?problem.message:'That did not go through.');setBusy(false)}
+ };
+
+ if(!options.length)return <Dialog title="Add money" onClose={onClose}>
+  <p>No payment provider is set up yet, so money cannot be added here.</p>
+ </Dialog>;
+
+ return <Dialog title="Add money" onClose={onClose} onSubmit={submit} busy={busy} confirmLabel="Continue to payment" error={error}>
+  <p>You will finish the payment on the provider's page, then come back here.</p>
+  <label>Currency
+   <select value={currency} onChange={event=>setCurrency(event.target.value as CurrencyCode)}>
+    {options.map(code=><option key={code} value={code}>{code} · {CURRENCIES[code].name}</option>)}
+   </select>
+  </label>
+  <label>Amount
+   <input inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)} placeholder={`0${CURRENCIES[currency].exponent?'.00':''}`} autoFocus/>
+  </label>
+ </Dialog>;
+}
+
+/** Withdrawing pays out to a bank account. Escrow is not part of the balance that can be sent. */
+function WithdrawDialog({wallets,payable,onClose,onDone}:{wallets:Wallet[];payable:CurrencyCode[];onClose:()=>void;onDone:(amount:string)=>Promise<void>}){
+ const options=wallets.filter(w=>!payable.length||payable.includes(w.currency)).map(w=>w.currency);
+ const[currency,setCurrency]=useState<CurrencyCode>(options[0]??'NGN');
+ const[amount,setAmount]=useState('');
+ const[bankCode,setBankCode]=useState('');
+ const[accountNumber,setAccountNumber]=useState('');
+ const[accountName,setAccountName]=useState('');
+ const[busy,setBusy]=useState(false);
+ const[error,setError]=useState<string|null>(null);
+ const banks=useLoader(()=>currency?walletService.banks(currency):Promise.resolve([] as Bank[]),[currency]);
  const selected=wallets.find(w=>w.currency===currency);
 
  const submit=async(event:React.FormEvent)=>{
@@ -164,30 +216,56 @@ function MoneyDialog({title,confirmLabel,owner,wallets,fieldLabel,fieldPlacehold
   const minor=toMinor(amount,currency);
   if(minor<=0){setError('Enter an amount greater than zero.');return}
   setBusy(true);
-  try{await onSubmit(currency,minor,field.trim()||fieldPlaceholder);onClose()}
-  catch(problem){setError(problem instanceof Error?problem.message:'That did not go through.')}
+  try{
+   await walletService.withdraw(currency,minor,{bankCode,accountNumber:accountNumber.trim(),accountName:accountName.trim()});
+   await onDone(formatMoney(minor,currency));
+   onClose();
+  }catch(problem){setError(problem instanceof Error?problem.message:'That did not go through.')}
   finally{setBusy(false)}
  };
 
+ if(!options.length)return <Dialog title="Withdraw funds" onClose={onClose}>
+  <p>You have no wallet money can be sent from yet.</p>
+ </Dialog>;
+
+ return <Dialog title="Withdraw funds" onClose={onClose} onSubmit={submit} busy={busy} confirmLabel="Request withdrawal" error={error}>
+  <label>Currency
+   <select value={currency} onChange={event=>setCurrency(event.target.value as CurrencyCode)}>
+    {options.map(code=><option key={code} value={code}>{code} · {CURRENCIES[code].name}</option>)}
+   </select>
+  </label>
+  <label>Amount
+   <input inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)} placeholder={`0${CURRENCIES[currency].exponent?'.00':''}`} autoFocus/>
+  </label>
+  {selected&&<small className="modal-hint">Available: {formatMoney(selected.available,currency)}{selected.reserved>0&&` · ${formatMoney(selected.reserved,currency)} in escrow, which cannot be withdrawn`}</small>}
+  <label>Bank
+   <select value={bankCode} onChange={event=>setBankCode(event.target.value)}>
+    <option value="">{banks.loading?'Loading banks…':'Choose a bank'}</option>
+    {(banks.data??[]).map(bank=><option key={bank.code} value={bank.code}>{bank.name}</option>)}
+   </select>
+  </label>
+  <label>Account number
+   <input inputMode="numeric" value={accountNumber} onChange={event=>setAccountNumber(event.target.value)} placeholder="0690000031"/>
+  </label>
+  <label>Account name
+   <input value={accountName} onChange={event=>setAccountName(event.target.value)} placeholder="As it appears at your bank"/>
+  </label>
+ </Dialog>;
+}
+
+/** The shell every money dialog uses: a form when there is something to submit, a note otherwise. */
+function Dialog({title,children,onClose,onSubmit,busy,confirmLabel,error}:{
+ title:string;children:React.ReactNode;onClose:()=>void;onSubmit?:(event:React.FormEvent)=>void;busy?:boolean;confirmLabel?:string;error?:string|null;
+}){
  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-  <form className="modal wallet-modal" onMouseDown={event=>event.stopPropagation()} onSubmit={submit}>
+  <form className="modal wallet-modal" onMouseDown={event=>event.stopPropagation()} onSubmit={onSubmit??(event=>{event.preventDefault();onClose()})}>
    <h2>{title}</h2>
-   <p>{owner.name} · {owner.ownerType==='ORG'?'organisation wallet':'personal wallet'}</p>
-   <label>Currency
-    <select value={currency} onChange={event=>setCurrency(event.target.value as CurrencyCode)}>
-     {options.map(code=><option key={code} value={code}>{code} · {CURRENCIES[code].name}</option>)}
-    </select>
-   </label>
-   <label>Amount
-    <input inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)} placeholder={`0${CURRENCIES[currency].exponent?'.00':''}`} autoFocus/>
-   </label>
-   {selected&&<small className="modal-hint">Available: {formatMoney(selected.available,currency)}{selected.reserved>0&&` · ${formatMoney(selected.reserved,currency)} in escrow`}</small>}
-   <label>{fieldLabel}
-    <input value={field} onChange={event=>setField(event.target.value)} placeholder={fieldPlaceholder}/>
-   </label>
-   {note&&<small className="modal-hint">{note}</small>}
+   {children}
    {error&&<p className="ledger-error">{error}</p>}
-   <div><button type="button" className="btn ghost" onClick={onClose}>Cancel</button><button className="btn" disabled={busy}>{busy?'Working…':confirmLabel}</button></div>
+   <div>
+    <button type="button" className="btn ghost" onClick={onClose}>{onSubmit?'Cancel':'Close'}</button>
+    {onSubmit&&<button className="btn" disabled={busy}>{busy?'Working…':confirmLabel}</button>}
+   </div>
   </form>
  </div>;
 }
@@ -219,8 +297,8 @@ function AddCurrencyDialog({options,onClose,onSubmit}:{options:CurrencyCode[];on
 }
 
 /** Small balance strip reused on the dashboards and the booking checkout. */
-export function WalletSummaryStrip({ownerId}:{ownerId:string}){
- const wallets=useLoader(()=>walletService.list(ownerId),[ownerId]);
+export function WalletSummaryStrip(){
+ const wallets=useLoader(()=>walletService.list(),[]);
  if(!wallets.data?.length)return null;
  return <div className="wallet-strip">
   <WalletIcon size={16}/>

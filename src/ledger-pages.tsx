@@ -1,5 +1,5 @@
 import{useState}from'react';
-import{AlertTriangle,Clock,FastForward,Flag,Scale,ShieldCheck,Wallet}from'lucide-react';
+import{AlertTriangle,Clock,Flag,Scale,ShieldCheck,Wallet}from'lucide-react';
 import{DashboardShell,StatCard}from'./components';
 import{useToast}from'./ui-feedback';
 import{useLoader,useOwner,type WorkspaceRole}from'./hooks/use-payments';
@@ -28,7 +28,7 @@ function GraceNote({payment,payee}:{payment:SessionPayment;payee:boolean}){
  if(payment.status==='PENDING'&&payment.maturesAt)return <small className="grace"><Clock size={13}/> {payee?'Clears':'Appeal window closes'} {relativeTime(payment.maturesAt)}</small>;
  if(payment.status==='FLAGGED')return <small className="grace flagged"><Flag size={13}/> Frozen while the appeal is reviewed</small>;
  if(payment.status==='PAID'&&payment.paidAt)return <small className="grace paid"><ShieldCheck size={13}/> Paid {formatDateTime(payment.paidAt)}</small>;
- if(payment.status==='APPEAL_SETTLEMENT'&&payment.settlement)return <small className="grace settled"><Scale size={13}/> Settled by an admin {formatDateTime(payment.settlement.resolvedAt)}</small>;
+ if(payment.status==='APPEAL_SETTLEMENT')return <small className="grace settled"><Scale size={13}/> Settled by an admin</small>;
  return null;
 }
 
@@ -40,20 +40,17 @@ export function SessionPaymentsPage({role}:{role:WorkspaceRole}){
  const payee=role!=='student';
  const[appealing,setAppealing]=useState<SessionPayment|null>(null);
 
- const payments=useLoader(()=>ledgerService.payments(payee?{payeeId:owner.ownerId}:{payerId:owner.ownerId}),[owner.ownerId,payee]);
- const earnings=useLoader(()=>payee?ledgerService.earnings(owner.ownerId):Promise.resolve([]),[owner.ownerId,payee]);
+ const payments=useLoader(()=>ledgerService.payments({asPayee:payee},owner.ownerId),[owner.ownerId,payee]);
+ const earnings=useLoader(()=>payee?ledgerService.earnings():Promise.resolve([]),[owner.ownerId,payee]);
 
  const rows=payments.data??[];
  const totals=earnings.data??[];
  const spent=rows.filter(p=>p.status!=='CANCELLED').reduce((sum,p)=>sum+(p.status==='HELD'?p.heldAmount:p.grossAmount),0);
  const currency=rows[0]?.currency??'USD';
 
- /* Preview-only: the server matures rows on a schedule, so without this a reviewer would have to
-    wait a day to see pending become paid. */
- const fastForward=async(payment:SessionPayment)=>{
-  try{await ledgerService.fastForwardGrace(payment.id);await payments.reload();await earnings.reload();toast('Grace period skipped — payment released')}
-  catch(problem){toast(problem instanceof Error?problem.message:'Could not release that payment')}
- };
+ if(role==='org')return <DashboardShell role={role}>
+  <div className="dash-welcome"><div><h1>Organisation earnings</h1><p>Sessions taught under an organisation are not billed here yet; each trainer sees their own earnings.</p></div></div>
+ </DashboardShell>;
 
  return <DashboardShell role={role}>
   <div className="dash-welcome">
@@ -95,32 +92,25 @@ export function SessionPaymentsPage({role}:{role:WorkspaceRole}){
        {payment.status!=='HELD'&&payment.status!=='CANCELLED'&&<span>fee {bpsToPercent(payment.platformFeeBps)}%</span>}
       </div>
       <GraceNote payment={payment} payee={payee}/>
-      {payment.settlement&&<p className="settlement-note">
-       Settlement · {payment.payerName} {formatMoney(payment.settlement.appellantAmount,payment.currency)} · {payment.payeeName} {formatMoney(payment.settlement.respondentAmount,payment.currency)}
-       <span>{payment.settlement.note}</span>
-      </p>}
      </div>
      <div className="ledger-amounts">
-      <b>{payee
-       ?formatMoney(payment.status==='APPEAL_SETTLEMENT'?payment.settlement?.respondentAmount??0:payment.netAmount,payment.currency)
-       :formatMoney(payment.status==='HELD'?payment.heldAmount:payment.grossAmount,payment.currency)}</b>
+      <b>{payee?formatMoney(payment.netAmount,payment.currency):formatMoney(payment.status==='HELD'?payment.heldAmount:payment.grossAmount,payment.currency)}</b>
       <span>{payee?'your share':payment.status==='HELD'?'held':'charged'}</span>
       {payee&&payment.grossAmount>0&&<small>gross {formatMoney(payment.grossAmount,payment.currency)} · fee {formatMoney(payment.platformFee,payment.currency)}</small>}
       <div className="ledger-actions">
        {!payee&&canAppeal(payment)&&<button type="button" className="text-danger" onClick={()=>setAppealing(payment)}>Appeal this charge</button>}
-       {payee&&payment.status==='PENDING'&&<button type="button" className="text-link" onClick={()=>fastForward(payment)}><FastForward size={13}/> Demo: skip grace</button>}
       </div>
      </div>
     </article>)}</div>}
   </div>
 
   {appealing&&<AppealDialog
-   payment={appealing} appellantId={owner.ownerId} onClose={()=>setAppealing(null)}
+   payment={appealing} onClose={()=>setAppealing(null)}
    onDone={async()=>{await payments.reload();toast('Appeal submitted — this payment is now frozen')}}/>}
  </DashboardShell>;
 }
 
-function AppealDialog({payment,appellantId,onClose,onDone}:{payment:SessionPayment;appellantId:string;onClose:()=>void;onDone:()=>Promise<void>}){
+function AppealDialog({payment,onClose,onDone}:{payment:SessionPayment;onClose:()=>void;onDone:()=>Promise<void>}){
  const[reason,setReason]=useState<AppealReason>('LEFT_EARLY');
  const[details,setDetails]=useState('');
  const[busy,setBusy]=useState(false);
@@ -130,7 +120,7 @@ function AppealDialog({payment,appellantId,onClose,onDone}:{payment:SessionPayme
   event.preventDefault();
   if(details.trim().length<15){setError('Please describe what happened in a sentence or two.');return}
   setBusy(true);
-  try{await ledgerService.openAppeal({sessionPaymentId:payment.id,appellantId,reason,details:details.trim()});await onDone();onClose()}
+  try{await ledgerService.openAppeal({sessionPaymentId:payment.id,reason,details:details.trim()});await onDone();onClose()}
   catch(problem){setError(problem instanceof Error?problem.message:'The appeal could not be created.')}
   finally{setBusy(false)}
  };
@@ -160,7 +150,7 @@ export function AppealsPage({role}:{role:WorkspaceRole}){
  const owner=useOwner(role);
  const toast=useToast();
  const asAppellant=role==='student';
- const appeals=useLoader(()=>ledgerService.appeals(asAppellant?{appellantId:owner.ownerId}:{respondentId:owner.ownerId}),[owner.ownerId,asAppellant]);
+ const appeals=useLoader(()=>ledgerService.appeals(!asAppellant,owner.ownerId),[owner.ownerId,asAppellant]);
 
  const withdrawOne=async(appeal:Appeal)=>{
   try{await ledgerService.withdrawAppeal(appeal.id);await appeals.reload();toast('Appeal withdrawn — the payment resumes its grace period')}
@@ -179,9 +169,10 @@ export function AppealsPage({role}:{role:WorkspaceRole}){
     :<div className="ledger-list">{rows.map(appeal=><article key={appeal.id} className="ledger-row">
      <div className="ledger-main">
       <div className="ledger-title"><strong>{appealReasons.find(([value])=>value===appeal.reason)?.[1]??appeal.reason}</strong><span className={`ledger-status ${appeal.status.toLowerCase()}`}>{appealStatusText[appeal.status]}</span></div>
-      <p>{asAppellant?`Against ${appeal.respondentName}`:`Raised by ${appeal.appellantName}`} · session {appeal.sessionId}</p>
+      <p>{asAppellant?`Against ${appeal.respondentName}`:`Raised by ${appeal.appellantName}`}</p>
       <p className="appeal-details">“{appeal.details}”</p>
-      {appeal.resolutionNote&&<p className="settlement-note">Admin decision · {appeal.resolutionNote}<span>Resolved by {appeal.reviewedBy} {appeal.resolvedAt?formatDateTime(appeal.resolvedAt):''}</span></p>}
+      {appeal.status==='RESOLVED'&&<p className="settlement-note">Admin decision · {appeal.resolutionNote||'settled'}
+       <span>{appeal.appellantName} {formatMoney(appeal.appellantAmount??0,'USD')} · {appeal.respondentName} {formatMoney(appeal.respondentAmount??0,'USD')} · {appeal.resolvedAt?formatDateTime(appeal.resolvedAt):''}</span></p>}
      </div>
      <div className="ledger-amounts">
       <span>{formatDateTime(appeal.createdAt)}</span>

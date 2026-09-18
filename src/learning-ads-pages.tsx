@@ -105,7 +105,7 @@ function AdComposer({ownerId,ownerName,onClose,onDone}:{ownerId:string;ownerName
  const[form,setForm]=useState({title:'',description:'',skill:skills[0]!,level:'Intermediate' as LearningAd['level'],currency:'USD' as CurrencyCode,rate:'',sessionMinutes:60,preferredTimes:''});
  const[busy,setBusy]=useState(false);
  const[error,setError]=useState<string|null>(null);
- const wallets=useLoader(()=>walletService.list(ownerId),[ownerId]);
+ const wallets=useLoader(()=>walletService.list(),[ownerId]);
  const set=<K extends keyof typeof form>(key:K,value:(typeof form)[K])=>setForm(current=>({...current,[key]:value}));
 
  const hourly=toMinor(form.rate,form.currency);

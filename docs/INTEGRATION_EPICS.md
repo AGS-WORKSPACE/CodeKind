@@ -34,7 +34,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Tutor dashboard (epic 5) | ✅ | Today, next session, active students, hours taught and profile status. |
 | My students (epic 6) | ✅ | Active and previous learners from `/tutor/students`. |
 | Live call connections | ✅ | Signaling service (PairloreSignal), tickets and STUN/TURN from `/sessions/:id/connect`. |
-| Wallets and payments (epic 7) | 🟡 | Backend done, including Flutterwave top-ups and withdrawals. The UI still runs on demo money. |
+| Wallets and payments (epic 7) | ✅ | Wallets, escrow, settlement, appeals, Flutterwave top-ups and withdrawals, and the admin money pages. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -114,13 +114,17 @@ No tutor is bookable until an admin approves them.
 **Backend**
 - `GET /tutor/students?view=active|previous&page=`, grouped server-side with counts for both tabs.
 
-## 7. Wallets and payments 🟡
-
-The ledger UI already exists and runs on demo data behind `ledgerService` and `walletService`.
+## 7. Wallets and payments ✅
 
 **UI**
-- Switch both services to the real endpoints in `docs/PAYMENTS_BACKEND_CONTRACT.md`.
-- Booking holds the escrow in the same request that creates the booking, not in two calls.
+- `ledgerService` and `walletService` call the real endpoints; the demo ledger and wallet
+  repositories are deleted. Money has no offline fallback: a balance the backend did not send is
+  not shown at all.
+- Booking holds the escrow inside the booking request, so there is no second call to undo.
+- Ending a session settles it; the summary reads what the server billed.
+- Admin gains Money Settings (commission, grace period, limits), Wallet Credits and live Appeals.
+  The mock finance and disputes sections they replace are gone.
+- Organisation wallets say plainly that they wait for epic 14.
 
 **Backend**
 - Done: wallets and ledger, escrow at booking (trial rate on a first session, free lessons at zero),
@@ -128,7 +132,8 @@ The ledger UI already exists and runs on demo data behind `ledgerService` and `w
   and permissions behind them.
 - Done: top-ups and withdrawals through Flutterwave, behind a provider interface chosen by currency,
   with webhooks that are verified with the provider before any money moves.
-- Left: the UI, in `docs/PAYMENTS_BACKEND_CONTRACT.md` order.
+**Left for later epics:** learning-ad bookings still run on the demo store (epic 13), and
+organisation wallets wait for epic 14.
 
 **Done when** booking holds real money, settling pays the tutor after the grace period, and demo
 wallets are deleted.

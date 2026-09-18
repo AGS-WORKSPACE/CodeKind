@@ -8,29 +8,20 @@ import type{SessionPayment}from'../types/payments';
  * escrow goes back to the learner, and the tutor's share starts its 24-hour grace period. Doing it
  * here keeps the money in step with what actually happened in the room.
  */
-function useSettledPayment(sessionId:string|undefined,attendedSeconds:number|undefined){
+function useSettledPayment(sessionId:string|undefined){
  const[payment,setPayment]=useState<SessionPayment|null>(null);
  const[error,setError]=useState<string|null>(null);
  useEffect(()=>{
   if(!sessionId)return;
   let live=true;
-  ledgerService.bySession(sessionId)
-   .then(async found=>{
-    if(!found)return null;
-    // A session already settled is left alone — reopening the summary must not bill twice.
-    if(found.status!=='HELD')return found;
-    try{return await ledgerService.settle(found.id,attendedSeconds??found.scheduledMinutes*60)}
-    catch(problem){
-     // Both sides of a call land here together; if the other one settled first, show that result.
-     const latest=await ledgerService.bySession(sessionId);
-     if(latest&&latest.status!=='HELD')return latest;
-     throw problem;
-    }
-   })
+  // Ending the session is what settles it; the server bills from what the room recorded. Calling
+  // it twice is safe, so both sides can land here.
+  ledgerService.endSession(sessionId)
+   .catch(()=>ledgerService.bySession(sessionId))
    .then(result=>{if(live)setPayment(result)})
    .catch(problem=>{if(live)setError(problem instanceof Error?problem.message:'The session payment could not be settled.')});
   return()=>{live=false};
- },[sessionId,attendedSeconds]);
+ },[sessionId]);
  return{payment,error};
 }
 
@@ -60,10 +51,10 @@ function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:
 export function LessonSummary(){
  const{bookingId}=useParams();
  const{state}=useLocation();
- const{attendedSeconds,view}=(state as{attendedSeconds?:number;view?:'tutor'|'learner'}|null)??{};
+ const{view}=(state as{view?:'tutor'|'learner'}|null)??{};
  // The room says which side you were on, so a tutor lands on the tutor summary.
  const[tutorMode,setTutorMode]=useState(view==='tutor');
- const{payment,error}=useSettledPayment(bookingId,attendedSeconds);
+ const{payment,error}=useSettledPayment(bookingId);
  return <main className="lesson-summary">
   <header><Link to="/">⌘ pairlore</Link><button onClick={()=>setTutorMode(!tutorMode)}>Preview {tutorMode?'student':'tutor'} view</button></header>
   {tutorMode?<TutorSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="tutor"/>}/>:<StudentSummary payment={payment} billing={<SessionBilling payment={payment} error={error} view="student"/>}/>}

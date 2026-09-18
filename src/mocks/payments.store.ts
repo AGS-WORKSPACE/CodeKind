@@ -1,4 +1,9 @@
-import type{Appeal,AppealReason,CurrencyCode,SessionPayment,Settlement,TopUp,Wallet,WalletEntry,WalletEntryKind,WalletOwnerType,Withdrawal}from'../types/payments';
+import type{Appeal,AppealReason,CurrencyCode,SessionPayment,TopUp,Wallet,WalletEntry,WalletEntryKind,WalletOwnerType,Withdrawal}from'../types/payments';
+
+/** Demo-only shapes: the live API keeps an appeal's decision on the appeal itself. */
+type Settlement={appellantAmount:number;respondentAmount:number;platformRetained:number;currency:CurrencyCode;note:string;resolvedBy:string;resolvedAt:string};
+type DemoPayment=SessionPayment&{appealId?:string;settlement?:Settlement};
+type DemoAppeal=Appeal&{sessionId:string;reviewedBy?:string};
 import type{LearningAd,TutorApplication}from'../types/learning-ads';
 import{assertSameCurrency,billableMinutes,graceDeadline,prorate,splitFee}from'../lib/money';
 
@@ -23,8 +28,8 @@ export const DEFAULT_FEE_BPS=1500;
 export type PaymentsStore={
  wallets:Wallet[];
  entries:WalletEntry[];
- payments:SessionPayment[];
- appeals:Appeal[];
+ payments:DemoPayment[];
+ appeals:DemoAppeal[];
  topUps:TopUp[];
  withdrawals:Withdrawal[];
  ads:LearningAd[];
@@ -236,7 +241,7 @@ export type EscrowInput={
  * Booking. The full scheduled duration is held up front; because billing is capped at that
  * duration, the hold is always enough and the surplus goes back when the session settles.
  */
-export function escrow(store:PaymentsStore,input:EscrowInput):SessionPayment{
+export function escrow(store:PaymentsStore,input:EscrowInput):DemoPayment{
  if(input.hourlyRate<=0)throw new Error('An hourly rate is required before a session can be booked.');
  if(input.payerId===input.payeeId)throw new Error('A session cannot be paid to its own payer.');
  const payerWallet=findWallet(store,input.payerId,input.currency);
@@ -280,7 +285,7 @@ export function escrow(store:PaymentsStore,input:EscrowInput):SessionPayment{
  * back to the payer, and the tutor's share becomes a pending balance — a ledger figure, not money
  * in their wallet, which is what makes the grace period meaningful.
  */
-export function settle(store:PaymentsStore,paymentId:string,attendedSeconds:number,endedAt=now()):SessionPayment{
+export function settle(store:PaymentsStore,paymentId:string,attendedSeconds:number,endedAt=now()):DemoPayment{
  const payment=store.payments.find(p=>p.id===paymentId);
  if(!payment)throw new Error('Unknown session payment.');
  if(payment.status!=='HELD')throw new Error(`This session was already settled (${payment.status}).`);
@@ -307,7 +312,7 @@ export function settle(store:PaymentsStore,paymentId:string,attendedSeconds:numb
 }
 
 /** Maturity: the pending balance becomes the tutor's money and the fee becomes platform revenue. */
-export function mature(store:PaymentsStore,paymentId:string,paidAt=now()):SessionPayment{
+export function mature(store:PaymentsStore,paymentId:string,paidAt=now()):DemoPayment{
  const payment=store.payments.find(p=>p.id===paymentId);
  if(!payment)throw new Error('Unknown session payment.');
  if(payment.status!=='PENDING')throw new Error(`Only a pending payment can be paid out (${payment.status}).`);
@@ -326,7 +331,7 @@ export function mature(store:PaymentsStore,paymentId:string,paidAt=now()):Sessio
 }
 
 /** Cancelling before the session gives the whole escrow back. */
-export function cancel(store:PaymentsStore,paymentId:string,reason:string):SessionPayment{
+export function cancel(store:PaymentsStore,paymentId:string,reason:string):DemoPayment{
  const payment=store.payments.find(p=>p.id===paymentId);
  if(!payment)throw new Error('Unknown session payment.');
  if(payment.status!=='HELD')throw new Error('Only a session still in escrow can be cancelled.');
@@ -351,14 +356,14 @@ export function sweep(store:PaymentsStore){
 export type AppealInput={sessionPaymentId:string;appellantId:string;reason:AppealReason;details:string};
 
 /** Only the payer, only while the money is still pending and still inside the 24-hour window. */
-export function openAppeal(store:PaymentsStore,input:AppealInput):Appeal{
+export function openAppeal(store:PaymentsStore,input:AppealInput):DemoAppeal{
  const payment=store.payments.find(p=>p.id===input.sessionPaymentId);
  if(!payment)throw new Error('Unknown session payment.');
  if(payment.payerId!==input.appellantId)throw new Error('Only the payer of a session can appeal it.');
  if(payment.status!=='PENDING')throw new Error(payment.status==='PAID'?'This session has already been paid out and can no longer be appealed.':`A ${payment.status.toLowerCase()} payment cannot be appealed.`);
  if(payment.maturesAt&&new Date(payment.maturesAt).getTime()<=Date.now())throw new Error('The 24-hour appeal window has closed.');
 
- const appeal:Appeal={
+ const appeal:DemoAppeal={
   id:uid('apl'),
   sessionPaymentId:payment.id,
   sessionId:payment.sessionId,
@@ -384,7 +389,7 @@ export type ResolutionInput={appellantAmount:number;respondentAmount:number;note
  * Manual resolution by an admin. The captured gross is still sitting in clearing, so paying either
  * side is a transfer rather than a clawback; whatever is not awarded is kept as platform revenue.
  */
-export function resolveAppeal(store:PaymentsStore,appealId:string,input:ResolutionInput):Appeal{
+export function resolveAppeal(store:PaymentsStore,appealId:string,input:ResolutionInput):DemoAppeal{
  const appeal=store.appeals.find(a=>a.id===appealId);
  if(!appeal)throw new Error('Unknown appeal.');
  if(appeal.status==='RESOLVED')throw new Error('This appeal has already been resolved.');
@@ -421,7 +426,7 @@ export function resolveAppeal(store:PaymentsStore,appealId:string,input:Resoluti
 }
 
 /** Withdrawing an appeal hands the row back to the normal grace-period path. */
-export function withdrawAppeal(store:PaymentsStore,appealId:string):Appeal{
+export function withdrawAppeal(store:PaymentsStore,appealId:string):DemoAppeal{
  const appeal=store.appeals.find(a=>a.id===appealId);
  if(!appeal)throw new Error('Unknown appeal.');
  if(appeal.status!=='OPEN'&&appeal.status!=='UNDER_REVIEW')throw new Error('Only an open appeal can be withdrawn.');

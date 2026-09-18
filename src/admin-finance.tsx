@@ -1,9 +1,8 @@
 import{useState}from'react';
 import{Scale}from'lucide-react';
-import{useAuth}from'./auth';
 import{useToast}from'./ui-feedback';
 import{useLoader}from'./hooks/use-payments';
-import{ledgerService}from'./services/ledger.service';
+import{adminPaymentsService}from'./services/admin-payments.service';
 import{StatusPill,appealReasons}from'./ledger-pages';
 import{bpsToPercent,formatDateTime,formatMoney,relativeTime,toMajor,toMinor}from'./lib/money';
 import type{Appeal,SessionPayment}from'./types/payments';
@@ -11,7 +10,7 @@ import type{Appeal,SessionPayment}from'./types/payments';
 /** The whole session-payment ledger, which is the money view the finance team works from. */
 export function AdminSessionPayments(){
  const[status,setStatus]=useState<SessionPayment['status']|'ALL'>('ALL');
- const payments=useLoader(()=>ledgerService.payments(status==='ALL'?{}:{status}),[status]);
+ const payments=useLoader(()=>adminPaymentsService.payments(status==='ALL'?undefined:status),[status]);
  const rows=payments.data??[];
  const total=(pick:(payment:SessionPayment)=>number)=>rows.reduce((sum,payment)=>sum+pick(payment),0);
  const currency=rows[0]?.currency??'USD';
@@ -54,11 +53,10 @@ export function AdminSessionPayments(){
 
 /** Appeal resolution: manual by design, and the only way a flagged payment ever moves again. */
 export function AdminAppeals(){
- const{user}=useAuth();
  const toast=useToast();
  const[resolving,setResolving]=useState<Appeal|null>(null);
- const appeals=useLoader(()=>ledgerService.appeals(),[]);
- const payments=useLoader(()=>ledgerService.payments(),[]);
+ const appeals=useLoader(()=>adminPaymentsService.appeals(),[]);
+ const payments=useLoader(()=>adminPaymentsService.payments(),[]);
  const rows=appeals.data??[];
  const open=rows.filter(appeal=>appeal.status==='OPEN'||appeal.status==='UNDER_REVIEW');
  const paymentFor=(appeal:Appeal)=>(payments.data??[]).find(payment=>payment.id===appeal.sessionPaymentId);
@@ -87,7 +85,7 @@ export function AdminAppeals(){
         <span className={`ledger-status ${appeal.status.toLowerCase()}`}>{appeal.status.replace('_',' ').toLowerCase()}</span>
         {payment&&<StatusPill status={payment.status}/>}
        </div>
-       <p>{appeal.appellantName} against {appeal.respondentName} · {payment?.topic??appeal.sessionId} · raised {formatDateTime(appeal.createdAt)}</p>
+       <p>{appeal.appellantName} against {appeal.respondentName}{payment?` · ${payment.topic}`:''} · raised {formatDateTime(appeal.createdAt)}</p>
        <p className="appeal-details">“{appeal.details}”</p>
        {payment&&<div className="ledger-meta">
         <span>{payment.billedMinutes}/{payment.scheduledMinutes} min billed</span>
@@ -95,9 +93,9 @@ export function AdminAppeals(){
         <span>fee {formatMoney(payment.platformFee,payment.currency)}</span>
         <span>tutor net {formatMoney(payment.netAmount,payment.currency)}</span>
        </div>}
-       {payment?.settlement&&<p className="settlement-note">
-        Settled · learner {formatMoney(payment.settlement.appellantAmount,payment.currency)} · tutor {formatMoney(payment.settlement.respondentAmount,payment.currency)} · platform kept {formatMoney(payment.settlement.platformRetained,payment.currency)}
-        <span>{payment.settlement.note} — {payment.settlement.resolvedBy}</span>
+       {appeal.status==='RESOLVED'&&payment&&<p className="settlement-note">
+        Settled · learner {formatMoney(appeal.appellantAmount??0,payment.currency)} · tutor {formatMoney(appeal.respondentAmount??0,payment.currency)} · platform kept {formatMoney(appeal.platformRetained??0,payment.currency)}
+        <span>{appeal.resolutionNote}</span>
        </p>}
       </div>
       <div className="ledger-amounts">
@@ -109,13 +107,13 @@ export function AdminAppeals(){
   </div>
 
   {resolving&&paymentFor(resolving)&&<ResolveDialog
-   appeal={resolving} payment={paymentFor(resolving)!} resolvedBy={user?`${user.firstName} ${user.lastName}`:'Admin'}
+   appeal={resolving} payment={paymentFor(resolving)!}
    onClose={()=>setResolving(null)}
    onDone={async()=>{await Promise.all([appeals.reload(),payments.reload()]);toast('Appeal resolved and the payment settled')}}/>}
  </div>;
 }
 
-function ResolveDialog({appeal,payment,resolvedBy,onClose,onDone}:{appeal:Appeal;payment:SessionPayment;resolvedBy:string;onClose:()=>void;onDone:()=>Promise<void>}){
+function ResolveDialog({appeal,payment,onClose,onDone}:{appeal:Appeal;payment:SessionPayment;onClose:()=>void;onDone:()=>Promise<void>}){
  const major=(minor:number)=>String(toMajor(minor,payment.currency));
  const[appellant,setAppellant]=useState('0');
  const[respondent,setRespondent]=useState(major(payment.netAmount));
@@ -135,7 +133,7 @@ function ResolveDialog({appeal,payment,resolvedBy,onClose,onDone}:{appeal:Appeal
   if(retained<0){setError('The settlement awards more than this session collected.');return}
   setBusy(true);
   try{
-   await ledgerService.resolveAppeal(appeal.id,{appellantAmount:appellantMinor,respondentAmount:respondentMinor,note:note.trim(),resolvedBy});
+   await adminPaymentsService.resolveAppeal(appeal.id,{appellantAmount:appellantMinor,respondentAmount:respondentMinor,note:note.trim()});
    await onDone();
    onClose();
   }catch(problem){setError(problem instanceof Error?problem.message:'The appeal could not be resolved.')}

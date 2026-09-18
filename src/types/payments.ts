@@ -43,17 +43,6 @@ export type WalletEntry={
 export type SessionPaymentStatus='HELD'|'PENDING'|'PAID'|'FLAGGED'|'APPEAL_SETTLEMENT'|'CANCELLED';
 export type SessionPaymentSource='DIRECT_BOOKING'|'LEARNING_AD';
 
-/** How an appeal was settled. Both sides can be paid, or only one. */
-export type Settlement={
- appellantAmount:number;
- respondentAmount:number;
- platformRetained:number;
- currency:CurrencyCode;
- note:string;
- resolvedBy:string;
- resolvedAt:string;
-};
-
 /**
  * The ledger row for one session. Created at booking with the escrow hold, settled when the
  * session ends, and matured 24 hours later unless an appeal flags it.
@@ -95,8 +84,6 @@ export type SessionPayment={
  /** pendingSince + 24h. A FLAGGED row ignores this until the appeal is resolved. */
  maturesAt?:string;
  paidAt?:string;
- appealId?:string;
- settlement?:Settlement;
 };
 
 export type AppealReason='TUTOR_NO_SHOW'|'LEFT_EARLY'|'WRONG_DURATION'|'QUALITY'|'OTHER';
@@ -105,7 +92,6 @@ export type AppealStatus='OPEN'|'UNDER_REVIEW'|'RESOLVED'|'REJECTED'|'WITHDRAWN'
 export type Appeal={
  id:string;
  sessionPaymentId:string;
- sessionId:string;
  appellantId:string;
  appellantName:string;
  respondentId:string;
@@ -114,15 +100,23 @@ export type Appeal={
  details:string;
  status:AppealStatus;
  createdAt:string;
- reviewedBy?:string;
- resolvedAt?:string;
+ /** Set once an admin has decided how the money is split. */
+ appellantAmount?:number;
+ respondentAmount?:number;
+ platformRetained?:number;
  resolutionNote?:string;
+ resolvedAt?:string;
 };
 
 export type TransferStatus='PENDING'|'COMPLETED'|'REJECTED';
 
-export type TopUp={id:string;walletId:string;ownerId:string;currency:CurrencyCode;amount:number;method:string;status:TransferStatus;createdAt:string};
+export type TopUp={id:string;walletId:string;ownerId:string;currency:CurrencyCode;amount:number;method:string;status:TransferStatus;createdAt:string;settledAt?:string};
 export type Withdrawal={id:string;walletId:string;ownerId:string;currency:CurrencyCode;amount:number;destination:string;status:TransferStatus;createdAt:string;settledAt?:string};
+/** Where a withdrawal is paid out. Bank codes come from the provider. */
+export type WithdrawalDestination={bankCode:string;accountNumber:string;accountName:string};
+export type Bank={code:string;name:string};
+/** Which currencies money can move in, and the providers that move it. */
+export type PaymentMethods={currencies:CurrencyCode[];methods:string[]};
 
 /** Reserved for the swap feature. Defined now so the ledger's reference types don't shift later. */
 export type SwapQuote={from:CurrencyCode;to:CurrencyCode;amount:number;rate:number;receives:number;expiresAt:string};

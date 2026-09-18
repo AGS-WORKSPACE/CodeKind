@@ -10,7 +10,6 @@ import type {Tutor} from './types';
 import {useToast} from './ui-feedback';
 import {useAuth} from './auth';
 import {useLoader} from './hooks/use-payments';
-import {ledgerService} from './services/ledger.service';
 import {walletService} from './services/wallet.service';
 import {formatMoney,prorate,toMinor} from './lib/money';
 import type {CurrencyCode} from './types/payments';
@@ -51,17 +50,15 @@ function BookingFlow({tutor}:{tutor:Tutor}){
   const payer={id:user?.id??'demo-student',name:user?`${user.firstName} ${user.lastName}`:'Alex Lee'};
   const setType=(value:LessonType)=>{setTypeState(value);if(value==='TRIAL')setDuration(30);setStartsAt('')};
   const goBack=()=>setStep(current=>Math.max(1,current-1));
-  /* Confirming is what escrows the money: the full scheduled duration leaves the learner's
-     available balance now, and whatever is not taught comes back when the session settles. */
+  /* Confirming escrows the money: the whole booked duration leaves the learner's available
+     balance now, and whatever is not taught comes back when the session settles. */
   const confirm=async()=>{
     setBusy(true);
     setError(null);
     try{
       const topic=`${type==='TRIAL'?'Trial lesson':'Lesson'} with ${tutor.name}`;
-      // The backend reserves the time; offline it returns null and the demo ledger keeps its own id.
-      const booking=await scheduleService.book({tutorId:tutor.id,skillCode:tutor.skillCodes?.[0],topic,notes:note,startsAt,durationMinutes:duration});
-      await ledgerService.create({sessionId:booking?.id??`les-${Date.now().toString(36)}`,source:'DIRECT_BOOKING',payerId:payer.id,payerType:'USER',payerName:payer.name,payeeId:tutor.id,payeeName:tutor.name,topic,skill:tutor.skills[0]??tutor.speciality,startsAt,currency:CURRENCY,hourlyRate,scheduledMinutes:duration})
-        .catch(async problem=>{if(booking)await scheduleService.cancel(booking.id,'Payment could not be held').catch(()=>{});throw problem});
+      // Booking holds the money in the same request, so there is never a booking without its escrow.
+      await scheduleService.book({tutorId:tutor.id,skillCode:tutor.skillCodes?.[0],topic,notes:note,startsAt,durationMinutes:duration});
       toast(`Booking created · ${formatMoney(price,CURRENCY)} held in escrow`);
       setStep(7);
     }catch(problem){setError(problem instanceof Error?problem.message:'The booking could not be created.')}
@@ -100,7 +97,7 @@ function Choices({value,onChange,items}:{value:string;onChange:(value:string)=>v
 function TutorMini({tutor}:{tutor:Tutor}){return <div className="tutor-mini"><div className="avatar">{tutor.image}</div><span><strong>{tutor.name}</strong><small>{tutor.headline}</small>{tutor.reviews>0&&<Stars rating={tutor.rating}/>}</span></div>}
 function Summary({tutor,type,duration,date,time,price,rate}:{tutor:string;type:string;duration:number;date:string;time:string;price:number;rate:number}){return <div className="booking-summary">{tutor&&<p><span>Tutor</span><strong>{tutor}</strong></p>}<p><span>Lesson</span><strong>{type==='TRIAL'?'Trial lesson':'Regular lesson'}</strong></p><p><span>Date and time</span><strong>{prettyDate(date)} · {time}</strong></p><p><span>Duration</span><strong>{duration} minutes</strong></p><p><span>Rate</span><strong>{formatMoney(rate,CURRENCY)} / hour</strong></p><p><span>Timezone</span><strong>{localTimezone}</strong></p><p className="total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong></p></div>}
 function Checkout({payerId,cost,hourlyRate,minutes,error}:{payerId:string;cost:number;hourlyRate:number;minutes:number;error:string|null}){
-  const wallets=useLoader(()=>walletService.list(payerId),[payerId]);
+  const wallets=useLoader(()=>walletService.list(),[payerId]);
   const wallet=wallets.data?.find(item=>item.currency===CURRENCY);
   const short=Boolean(wallet)&&wallet!.available<cost;
   return <div className="checkout">
