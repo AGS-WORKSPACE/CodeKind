@@ -36,6 +36,8 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Live call connections | ✅ | Signaling service (PairloreSignal), tickets and STUN/TURN from `/sessions/:id/connect`. |
 | Wallets and payments (epic 7) | ✅ | Wallets, escrow, settlement, appeals, Flutterwave top-ups and withdrawals, and the admin money pages. |
 | Live sessions (epic 8) | ✅ | Ending completes the booking and settles it; the evidence is kept; the summary reads the booking. |
+| Reviews and ratings (epic 9) | ✅ | Learners review a finished session; ratings on cards, profiles, search and the tutor dashboard. |
+| Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -60,7 +62,7 @@ Booking needs a verified email, so this comes before anything else.
 **UI**
 - Tutors page sends `skill`, `q` and `page` to `GET /tutors` and uses its pagination. Remove filters
   the backend does not support yet (rating, availability) rather than faking them.
-- Tutor profile page shows real fields; hide rating, reviews and lesson counts until epic 9.
+- Tutor profile page shows real fields; ratings and reviews arrived with epic 9, lesson counts later.
 - Tutor onboarding drops step 6 (weekly availability).
 
 **Backend:** `GET /tutors` takes `skill`, `q`, `language`, `maxPrice`, `experience`, `sort` and `page`.
@@ -156,15 +158,39 @@ wallets are deleted.
 - Signaling and STUN/TURN are done: the room connects through PairloreSignal when the API has
   `SIGNAL_URL`, and demo tabs (`?as=`) still use the browser-only channel.
 
-**Left for later epics:** reviews (epic 9) and homework (epic 11) join the summary when they exist.
+**Left for later epics:** homework joins the summary with epic 11. The review is there already.
 
-## 9. Reviews and ratings
+## 9. Reviews and ratings ✅
 
 **UI**
-- "Leave a review" on the lesson summary; ratings and review counts on tutor cards and profile.
+- The lesson summary asks the learner for stars and a comment, and shows what they wrote when they
+  come back. Sending it again replaces it.
+- Ratings and review counts on tutor cards, the tutor profile (with the reviews themselves), the
+  "Best reviewed" sort, and the tutor dashboard.
+- `/tutor/reviews` is a real page instead of the notifications page.
 
 **Backend**
-- `POST /bookings/:id/review`, rating aggregates on the tutor profile.
+- `POST /bookings/:id/review` — the learner of a completed session only, one to five stars.
+  `GET /bookings/:id/review`, `GET /tutors/:id/reviews`, `GET /reviews/latest`.
+- The average and count live on the tutor profile, so lists and sorting need no join. A first
+  review notifies the tutor; edits do not.
+
+## Demo pages retired ✅
+
+The pages that showed invented content now either read the API or say what is missing.
+
+- **Home** reads real tutors (best reviewed first), real subjects from the skill list, and real
+  reviews. The invented testimonials, the fake customer logo strip and the "4.9 from 12,000+
+  sessions" claim are gone; `GET /stats` supplies the numbers, and each one is hidden until there
+  is something to count.
+- **Messages, assignments and learning paths** keep their routes and say plainly that they are not
+  built yet, with the fake conversation, demo assignments and invented curriculum deleted. They
+  come back with epics 10, 11 and 12.
+- **The admin control centre** shows real counts, applications waiting and open appeals. Every
+  section still without a backend says so rather than showing a demo table, and the mock admin
+  repository is deleted. Epic 15 fills them in.
+- Dead demo components (`AdminDashboard`, the old `Booking` flow, the old `LessonRoom`,
+  `AdminManagement`) are deleted with the mock data they read.
 
 ## 10. Messages
 

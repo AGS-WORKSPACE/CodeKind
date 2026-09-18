@@ -1,5 +1,5 @@
 import{Link}from'react-router-dom';
-import{ArrowRight,CalendarDays,Clock,Users,Video}from'lucide-react';
+import{ArrowRight,CalendarDays,Clock,Star,Users,Video}from'lucide-react';
 import{DashboardShell,StatCard}from'./components';
 import{useAuth}from'./auth';
 import{useLoader}from'./hooks/use-payments';
@@ -48,6 +48,7 @@ export function TutorDashboard(){
    <StatCard label="Upcoming sessions" value={String(summary.upcoming.length)} trend="This month and next" icon={<Video/>}/>
    <StatCard label="Active students" value={String(students.data?.active??0)} trend="With a session booked" icon={<Users/>}/>
    <StatCard label="Hours taught" value={summary.hours.toFixed(1)} trend="This month" icon={<Clock/>}/>
+   <StatCard label="Rating" value={profile.data?.reviewCount?profile.data.rating.toFixed(1):'—'} trend={profile.data?.reviewCount?`From ${profile.data.reviewCount} review${profile.data.reviewCount===1?'':'s'}`:'No reviews yet'} icon={<Star/>}/>
   </div>
   <div className="dash-grid">
    <section className="panel next">

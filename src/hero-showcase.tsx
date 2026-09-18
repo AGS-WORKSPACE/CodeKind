@@ -1,6 +1,8 @@
 import {useEffect,useRef,useState} from 'react';
 import {BarChart3,Brain,Building2,Cloud,Code2,Languages,Pause,PenTool,Play,ShieldCheck,Sparkles,Zap} from 'lucide-react';
 import {SearchBar,Stars} from './components';
+import {useLoader} from './hooks/use-payments';
+import {statsService} from './services/reviews.service';
 import {domains} from './data/domains';
 import type {DomainIcon,PanelBlock} from './data/domains';
 
@@ -114,12 +116,7 @@ export function HeroShowcase(){
      {playing?<Pause size={14}/>:<Play size={14}/>}
     </button>}
    </div>
-   <div className="trust-row">
-    <span><div className="faces">{faces.map(initials=><i key={initials}>{initials}</i>)}</div></span>
-    <span><Stars rating={4.9}/><small>from 12,000+ sessions</small></span>
-    <span><ShieldCheck size={19}/> Vetted tutors</span>
-    <span><Building2 size={18}/> Individuals &amp; organisations</span>
-   </div>
+   <TrustRow faces={faces}/>
   </div>
   <div className="hero-panel">
    <div className="showcase-window" key={domain.id}>
@@ -133,4 +130,19 @@ export function HeroShowcase(){
    <div className="float-card" key={`${domain.id}-next`}><Zap size={18}/><strong>{domain.next.label}</strong><span>{domain.next.when}</span></div>
   </div>
  </section>;
+}
+
+/* Only what the platform can actually count. A new platform shows its promises, not numbers it
+   does not have. */
+function TrustRow({faces}:{faces:string[]}){
+ const stats=useLoader(()=>statsService.read(),[]);
+ const{tutors=0,sessions=0,reviews=0,rating=0}=stats.data??{};
+ return <div className="trust-row">
+  <span><div className="faces">{faces.map(initials=><i key={initials}>{initials}</i>)}</div></span>
+  {reviews>0&&<span><Stars rating={rating}/><small>from {reviews} review{reviews===1?'':'s'}</small></span>}
+  {sessions>0&&<span><Sparkles size={18}/> {sessions} session{sessions===1?'':'s'} taught</span>}
+  {tutors>0&&<span><ShieldCheck size={19}/> {tutors} vetted tutor{tutors===1?'':'s'}</span>}
+  {tutors===0&&<span><ShieldCheck size={19}/> Vetted tutors</span>}
+  <span><Building2 size={18}/> Individuals &amp; organisations</span>
+ </div>;
 }

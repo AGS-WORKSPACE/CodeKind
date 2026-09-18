@@ -4,6 +4,7 @@ import{ExternalLink,Search,ShieldCheck}from'lucide-react';
 import{Filters,SkillBadge,Stars,TutorCard,type TutorFilterState}from'./components';
 import{useLoader}from'./hooks/use-payments';
 import{tutorService}from'./services/tutor.service';
+import{ReviewList}from'./reviews-pages';
 
 const EMPTY_FILTERS:TutorFilterState={skill:'',maxPrice:'',experience:'',language:''};
 // Tutors type their languages, so offer the common ones rather than every value ever entered.
@@ -59,7 +60,7 @@ export function Tutors(){
    <div>
     <div className="results-head">
      <span><strong>{pagination?.total??0} tutors</strong> found</span>
-     <label>Sort by <select value={sort} onChange={e=>setSort(e.target.value)}><option value="best">{search.trim()?'Best match':'Newest'}</option><option value="newest" hidden={!search.trim()}>Newest</option><option value="price">Lowest rate</option><option value="experience">Most experienced</option></select></label>
+     <label>Sort by <select value={sort} onChange={e=>setSort(e.target.value)}><option value="best">{search.trim()?'Best match':'Newest'}</option><option value="newest" hidden={!search.trim()}>Newest</option><option value="price">Lowest rate</option><option value="experience">Most experienced</option><option value="rating">Best reviewed</option></select></label>
     </div>
     {results.loading&&search.trim()&&<p className="search-status">Finding the best matches…</p>}
     {results.loading&&!results.data?<LoadingCards/>
@@ -99,13 +100,14 @@ export function TutorProfile(){
       <h2>{t.headline}</h2>
       <p>{t.location}{t.languages.length>0&&` · Speaks ${t.languages.join(', ')}`}</p>
       <div className="profile-stats">{t.reviews
-       ?<><Stars rating={t.rating}/><span><strong>{t.reviews}</strong> reviews</span><span><strong>{t.students}</strong> students</span><span><strong>{t.lessons}</strong> lessons</span></>
+       ?<><Stars rating={t.rating}/><span><strong>{t.reviews}</strong> review{t.reviews===1?'':'s'}</span></>
        :<span className="new-tutor">New to Pairlore · {t.experience} years’ experience</span>}</div>
      </div>
     </section>
     {t.bio&&<section className="profile-section"><h2>About me</h2><p>{t.bio}</p></section>}
     {t.skills.length>0&&<section className="profile-section"><h2>Skills</h2><div className="badges big">{t.skills.map(s=><SkillBadge key={s}>{s}</SkillBadge>)}</div></section>}
     <section className="profile-section"><h2>Experience</h2><p>{t.experience} years of professional experience.</p>{t.speciality&&!t.skills.includes(t.speciality)&&<p>{t.speciality}</p>}</section>
+    <section className="profile-section"><h2>Reviews</h2><ReviewList tutorId={t.id} empty={`No reviews yet. ${t.name.split(' ')[0]} has not been reviewed by a learner here.`}/></section>
     {t.links&&t.links.length>0&&<section className="profile-section"><h2>Work</h2><div className="profile-links">{t.links.map(link=><a href={link.url} target="_blank" rel="noreferrer" key={link.label}>{link.label} <ExternalLink size={13}/></a>)}</div></section>}
    </div>
    <aside className="booking-card">

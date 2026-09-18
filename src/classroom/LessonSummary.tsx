@@ -1,7 +1,8 @@
-import{useEffect,useState}from'react';import{Link,useLocation,useParams}from'react-router-dom';import{BookOpen,CalendarDays,Check,Clock,Lock,Users}from'lucide-react';
+import{useEffect,useState}from'react';import{Link,useLocation,useParams}from'react-router-dom';import{BookOpen,CalendarDays,Check,Clock,Lock,Star,Users}from'lucide-react';
 import{useAuth}from'../auth';
 import{useLoader}from'../hooks/use-payments';
 import{ledgerService}from'../services/ledger.service';
+import{reviewsService,type Review}from'../services/reviews.service';
 import{scheduleService,type Booking}from'../services/schedule.service';
 import{formatMoney,relativeTime}from'../lib/money';
 import type{SessionPayment}from'../types/payments';
@@ -55,6 +56,41 @@ function SessionBilling({payment,error,view}:{payment:SessionPayment|null;error:
  </div>;
 }
 
+/** The learner's word on the session. Sending it again replaces what they said before. */
+function ReviewForm({bookingId,tutorName}:{bookingId:string;tutorName:string}){
+ const existing=useLoader(()=>reviewsService.forSession(bookingId),[bookingId]);
+ const[rating,setRating]=useState(0);
+ const[comment,setComment]=useState('');
+ const[busy,setBusy]=useState(false);
+ const[error,setError]=useState<string|null>(null);
+ const[saved,setSaved]=useState<Review|null>(null);
+ const review=saved??existing.data;
+ useEffect(()=>{if(existing.data){setRating(existing.data.rating);setComment(existing.data.comment)}},[existing.data]);
+
+ const send=async(event:React.FormEvent)=>{
+  event.preventDefault();
+  if(rating<1){setError('Choose how many stars this session deserves.');return}
+  setBusy(true);setError(null);
+  try{setSaved(await reviewsService.save(bookingId,rating,comment))}
+  catch(problem){setError(problem instanceof Error?problem.message:'That review could not be saved.')}
+  finally{setBusy(false)}
+ };
+
+ return <form className="summary-review" onSubmit={send}>
+  <h2>{review?'Your review':`How was your session with ${first(tutorName)}?`}</h2>
+  <div className="star-picker">
+   {[1,2,3,4,5].map(value=>
+    <button type="button" key={value} className={value<=rating?'on':''} aria-label={`${value} star${value>1?'s':''}`} onClick={()=>setRating(value)}>
+     <Star size={22} fill={value<=rating?'currentColor':'none'}/>
+    </button>)}
+  </div>
+  <textarea value={comment} onChange={event=>setComment(event.target.value)} placeholder="What went well, and what could have gone better? Other learners read this."/>
+  {error&&<p className="ledger-error">{error}</p>}
+  <button className="btn" disabled={busy}>{busy?'Saving…':review?'Update my review':'Leave this review'}</button>
+  {review&&!busy&&<p className="escrow-note">Your review is on {tutorName}’s profile. You can change it here whenever you like.</p>}
+ </form>;
+}
+
 /** The facts of the session, all read from the booking rather than written here. */
 function SessionFacts({booking,minutes}:{booking:Booking;minutes:number}){
  return <div className="summary-meta">
@@ -93,6 +129,7 @@ function StudentSummary({booking,payment,error}:SideProps){
   <p>You spent {minutes} minutes on {booking.topic} with {booking.tutor.name}.</p>
   <SessionFacts booking={booking} minutes={minutes}/>
   <SessionBilling payment={payment} error={error} view="student"/>
+  <ReviewForm bookingId={booking.id} tutorName={booking.tutor.name}/>
   <div className="summary-actions">
    <Link className="btn" to={`/booking/${booking.tutor.id}`}>Book another lesson</Link>
    <Link className="btn ghost" to="/student/lessons">My lessons</Link>
