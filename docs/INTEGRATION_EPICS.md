@@ -34,7 +34,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Tutor dashboard (epic 5) | ✅ | Today, next session, active students, hours taught and profile status. |
 | My students (epic 6) | ✅ | Active and previous learners from `/tutor/students`. |
 | Live call connections | ✅ | Signaling service (PairloreSignal), tickets and STUN/TURN from `/sessions/:id/connect`. |
-| Wallets and payments (epic 7) | 🟡 | Backend: escrow, settlement from evidence, grace sweep, appeals, admin credits and settings. Providers and the UI are next. |
+| Wallets and payments (epic 7) | 🟡 | Backend done, including Flutterwave top-ups and withdrawals. The UI still runs on demo money. |
 | Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
 
 ---
@@ -126,7 +126,9 @@ The ledger UI already exists and runs on demo data behind `ledgerService` and `w
 - Done: wallets and ledger, escrow at booking (trial rate on a first session, free lessons at zero),
   settlement from the session evidence, the grace sweep, appeals, admin credits, and the settings
   and permissions behind them.
-- Left: top-ups and withdrawals through Flutterwave, behind a provider interface chosen by currency.
+- Done: top-ups and withdrawals through Flutterwave, behind a provider interface chosen by currency,
+  with webhooks that are verified with the provider before any money moves.
+- Left: the UI, in `docs/PAYMENTS_BACKEND_CONTRACT.md` order.
 
 **Done when** booking holds real money, settling pays the tutor after the grace period, and demo
 wallets are deleted.

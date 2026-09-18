@@ -1,5 +1,12 @@
 # Payments, wallets and appeals — backend contract
 
+> **Built, with these differences from the tables below.** Paths live under `/api/v1`. Ownership
+> comes from the session cookie, so `ownerId`, `payerId` and `payeeName` are never sent by the
+> client. Settling is `POST /sessions/:id/end`, which bills from the session evidence rather than an
+> `attendedSeconds` the browser supplies. A withdrawal's `destination` is
+> `{ bankCode, accountNumber, accountName }`. Top-up replies add `paymentUrl`, the provider's payment
+> page. New: `GET /payments/methods`, `GET /payments/banks`, `GET /wallets/top-ups`.
+
 The frontend for hourly pricing, the session-payment ledger, appeals and multi-currency wallets is
 complete and runs against offline repositories. This is what the backend has to provide to replace
 them. Responses use the same envelope as the rest of the API: `{ success, data?, message?, errors? }`,
