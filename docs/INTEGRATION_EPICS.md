@@ -41,6 +41,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Assignments (epic 11) | ✅ | Tutors set work after a session, learners hand it in, tutors review it; on the summary and dashboard too. |
 | Learning paths (epic 12) | ✅ | Admins write paths; learners enrol and tick modules off on a route line; dashboard panel live. |
 | Recurring schedules | ✅ | A tutor proposes days, time and dates; the learner accepts; each session is paid when it opens. |
+| Learning ads (epic 13) | ✅ | Learners post a rate; tutors apply with a time; accepting books it and holds the money. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | ✅ | Name, stats, next session, current path, assignments and suggested tutors are all live. |
 
@@ -272,13 +273,25 @@ For a standing arrangement, such as Wednesday to Friday, 8 to 11am, for three mo
   closed by the sweep as never opened, not as taught.
 - Times are kept in the tutor's timezone, so 8am stays 8am across a clock change.
 
-## 13. Learning ads
+## 13. Learning ads ✅
 
 **UI**
-- The ad board, tutor applications and turning an accepted application into a booking run on the
-  backend.
+- The board is a cork board of paper flyers: subject, level, the learner's rate, the session length
+  and cost, and good times. A tab tears off the bottom for each tutor who applies.
+- A tutor applies with a message and a first session time, can change the offer until it is
+  answered, and follows their applications as slips stamped shortlisted, booked or declined.
+- A learner posts an ad from `/student/learning-ads`, sees the replies pinned beside each flyer,
+  and shortlists, declines or accepts. Accepting names the price and is blocked, with a top-up
+  link, while the wallet cannot cover it. An ad can be taken down.
+- The mock ad repository and the offline payments store it sat on are gone.
 
-**Backend:** ads and applications; conversion writes a booking and its escrow (epics 4 and 7).
+**Backend**
+- `GET /ads` (tutors), `GET /ads/mine`, `POST /ads`, `POST /ads/:id/close`,
+  `GET`/`POST /ads/:id/applications`, `GET /ad-applications` (tutors) and
+  `POST /ad-applications/:id/shortlist|decline|accept|withdraw`.
+- Only an approved tutor can apply, never to their own ad. An ad is open for two weeks.
+- Accepting books the offered time at the ad's rate, holds the money and fills the ad in one
+  transaction; the clash check and a short wallet refuse all of it. Everyone else waiting is declined.
 
 ## 14. Organisations
 

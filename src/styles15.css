@@ -88,29 +88,6 @@
 .resolve-presets button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 12px;font-size:11px;font-weight:700;color:#2f5a4a}
 .resolve-presets button:hover{border-color:#8dc3a9;background:#f4fbf7}
 
-/* Learning ads */
-.ad-list{display:grid;gap:12px}
-.ad-card{border:1px solid var(--line);border-radius:13px;padding:16px;background:#fff;display:grid;gap:11px}
-.ad-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-.ad-head h4{margin:0;font-size:15px}
-.ad-head p{margin:5px 0 0;font-size:12px;color:var(--muted);line-height:1.6;max-width:72ch}
-.ad-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:11px;color:var(--muted)}
-.ad-meta span{display:inline-flex;align-items:center;gap:5px}
-.ad-rate{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;background:#f4f8f6;border-radius:10px;padding:10px 13px}
-.ad-rate strong{font-size:19px;letter-spacing:-.8px}
-.ad-rate span{font-size:11px;color:var(--muted)}
-.ad-rate i{font-style:normal;font-size:11px;color:#41695a;margin-left:auto}
-.ad-actions{display:flex;align-items:center;gap:12px}
-.applied-note{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#26694a;font-weight:700}
-.applicant-list{display:grid;gap:10px;border-top:1px solid #eef2f0;padding-top:12px}
-.applicant{display:flex;gap:12px;align-items:flex-start}
-.applicant-body{flex:1;min-width:0;display:grid;gap:4px}
-.applicant-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.applicant-head strong{font-size:13px}
-.applicant-body small{font-size:11px;color:var(--muted)}
-.applicant-body p{margin:0;font-size:12px;line-height:1.6;color:#3f524b}
-.applicant-actions{display:grid;gap:7px;justify-items:end;flex:none}
-
 /* Booking checkout paid from the wallet */
 .wallet-pay{display:flex;align-items:center;gap:13px;border:1px solid #bfe2ce;background:#f5fcf7;border-radius:12px;padding:14px}
 .wallet-pay.short{border-color:#f0c2cd;background:#fdeef1}
@@ -148,8 +125,6 @@
  .ledger-row{flex-direction:column;gap:12px}
  .ledger-amounts{justify-items:start;text-align:left}
  .wallet-head-actions{width:100%}
- .applicant{flex-wrap:wrap}
- .applicant-actions{justify-items:start}
 }
 
 .lobby-escrow{display:flex;align-items:center;gap:8px;font-size:12px;color:#2f5a4a;background:#f4f8f6;border-radius:10px;padding:10px 13px;margin:14px 0 0}

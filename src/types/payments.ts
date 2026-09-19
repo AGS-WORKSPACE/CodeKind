@@ -1,6 +1,5 @@
 /** Money is always integer minor units (cents, kobo, …). Never a float, never a decimal string. */
 export type CurrencyCode='USD'|'NGN'|'GBP'|'EUR'|'KES'|'GHS'|'ZAR'|'INR'|'CAD'|'JPY';
-export type Money={amount:number;currency:CurrencyCode};
 
 export type WalletOwnerType='USER'|'ORG'|'PLATFORM';
 
@@ -51,7 +50,6 @@ export type SessionPayment={
  id:string;
  sessionId:string;
  source:SessionPaymentSource;
- adId?:string;
  payerId:string;
  payerType:'USER'|'ORG';
  payerName:string;

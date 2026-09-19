@@ -1,4 +1,4 @@
-import type{CurrencyCode,Money}from'../types/payments';
+import type{CurrencyCode}from'../types/payments';
 
 /**
  * Every amount in the payment system is an integer in minor units. Floats are never used for money:
@@ -20,7 +20,6 @@ export const CURRENCIES:Record<CurrencyCode,CurrencyMeta>={
 };
 
 export const CURRENCY_CODES=Object.keys(CURRENCIES) as CurrencyCode[];
-export const isCurrency=(value:string):value is CurrencyCode=>value in CURRENCIES;
 const factor=(currency:CurrencyCode)=>10**CURRENCIES[currency].exponent;
 
 /** "12.50" or 12.5 in a form field → 1250 minor units. */
@@ -39,46 +38,17 @@ export const formatMoney=(minor:number,currency:CurrencyCode)=>{
  return `${sign}${symbol}${body}`;
 };
 
-/** With the code appended, for screens that mix currencies in one list. */
-export const formatMoneyFull=(minor:number,currency:CurrencyCode)=>`${formatMoney(minor,currency)} ${currency}`;
-
-export const money=(amount:number,currency:CurrencyCode):Money=>({amount,currency});
-
-/** The per-minute figure the pricing UI shows, e.g. $10/h → $0.17/min displayed from 16.67 minor. */
-export const perMinuteRate=(hourlyRate:number)=>hourlyRate/60;
-
 /**
  * What `minutes` of teaching costs at `hourlyRate` per hour, rounded up to the minor unit so the
  * platform never under-charges by a fraction it cannot represent.
  */
 export const prorate=(hourlyRate:number,minutes:number)=>Math.ceil(hourlyRate*minutes/60);
 
-/**
- * Attended time converted to billable minutes: rounded up to the whole minute, then capped at the
- * scheduled duration. The cap is what guarantees a capture never exceeds the escrow held at booking.
- */
-export const billableMinutes=(attendedSeconds:number,scheduledMinutes:number)=>
- Math.max(0,Math.min(Math.ceil(Math.max(0,attendedSeconds)/60),scheduledMinutes));
-
 /** Commission is stored in basis points so a 12.5% rate needs no float in the ledger. */
 export const percentToBps=(percent:number)=>Math.round(percent*100);
 export const bpsToPercent=(bps:number)=>bps/100;
 
-export const splitFee=(gross:number,platformFeeBps:number)=>{
- const platformFee=Math.round(gross*platformFeeBps/10000);
- return{gross,platformFee,net:gross-platformFee};
-};
-
-export const assertSameCurrency=(a:CurrencyCode,b:CurrencyCode)=>{
- if(a!==b)throw new Error(`Currency mismatch: ${a} cannot move against ${b}. Swap is not available yet.`);
-};
-
-const HOUR=60*60*1000;
-export const GRACE_PERIOD_HOURS=24;
-
-export const graceDeadline=(from:string|Date)=>new Date(new Date(from).getTime()+GRACE_PERIOD_HOURS*HOUR).toISOString();
-
-/** "in 14 hours" / "3 hours ago" — used on every ledger row to show where the grace period stands. */
+/** "in 14 hours" / "3 hours ago". */
 export const relativeTime=(iso:string,now=Date.now())=>{
  const diff=new Date(iso).getTime()-now;
  const minutes=Math.round(Math.abs(diff)/60000);

@@ -1,241 +1,275 @@
 import{useState}from'react';
-import{CalendarClock,Check,Megaphone,Send,Users}from'lucide-react';
-import{DashboardShell,SkillBadge,StatCard,Stars}from'./components';
+import{Link}from'react-router-dom';
+import{CalendarClock,Check,Megaphone,Send}from'lucide-react';
+import{DashboardShell}from'./components';
 import{useToast}from'./ui-feedback';
-import{useLoader,useOwner,type WorkspaceRole}from'./hooks/use-payments';
-import{learningAdsService}from'./services/learning-ads.service';
+import{useLoader}from'./hooks/use-payments';
+import{Dialog}from'./lessons-page';
+import{StarRow}from'./reviews-pages';
+import{adsService,type AdApplication,type AdLevel,type LearningAd}from'./services/learning-ads.service';
+import{tutorService}from'./services/tutor.service';
 import{walletService}from'./services/wallet.service';
-import{CURRENCIES,CURRENCY_CODES,formatMoney,prorate,relativeTime,toMinor}from'./lib/money';
-import{tutors}from'./data/mock';
-import type{LearningAd,TutorApplication}from'./types/learning-ads';
+import{CURRENCY_CODES,formatMoney,prorate,toMinor}from'./lib/money';
 import type{CurrencyCode}from'./types/payments';
 
-const skills=['React','TypeScript','Python','JavaScript','Node.js','Data Science','Machine Learning','Cloud & DevOps','React Native','SQL'];
-const applicationTone:Record<TutorApplication['status'],string>={APPLIED:'applied',SHORTLISTED:'shortlisted',ACCEPTED:'accepted',DECLINED:'declined',WITHDRAWN:'withdrawn'};
+const TABS=6;
+const LEVELS:AdLevel[]=['beginner','intermediate','advanced'];
+const LENGTHS=[30,60,90,120,180,240];
+const errorOf=(problem:unknown,fallback:string)=>problem instanceof Error?problem.message:fallback;
+const when=(iso:string)=>new Date(iso).toLocaleString('en',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+const firstName=(name:string)=>name.split(' ')[0]??name;
+const STAMP:Record<AdApplication['status'],string>={applied:'',shortlisted:'Shortlisted',accepted:'Booked',declined:'Declined',withdrawn:'Withdrawn'};
 
-/** What a session at this ad's rate will actually cost, shown before anybody commits to it. */
-function RateLine({ad}:{ad:LearningAd}){
- return <div className="ad-rate">
-  <strong>{formatMoney(ad.hourlyRate,ad.currency)}</strong><span>/hour</span>
-  <i>{ad.sessionMinutes} min session · {formatMoney(prorate(ad.hourlyRate,ad.sessionMinutes),ad.currency)} per session</i>
- </div>;
+/** An ad drawn as a paper flyer. The tabs along the bottom tear off as tutors apply. */
+function Flyer({ad,children}:{ad:LearningAd;children?:React.ReactNode}){
+ const rate=`${formatMoney(ad.hourlyRate,ad.currency)}/h`;
+ return <article className={`flyer state-${ad.status}`}>
+  <div className="flyer-body">
+   {ad.status!=='open'&&<span className="flyer-stamp">{ad.status}</span>}
+   <small className="flyer-kicker">{ad.skill} · {ad.level}</small>
+   <h3>{ad.title}</h3>
+   {ad.description&&<p>{ad.description}</p>}
+   <dl className="flyer-facts">
+    <div><dt>Pays</dt><dd>{rate}</dd></div>
+    <div><dt>Session</dt><dd>{ad.sessionMinutes} min · {formatMoney(ad.sessionCost,ad.currency)}</dd></div>
+    {ad.preferredTimes&&<div><dt>When</dt><dd>{ad.preferredTimes}</dd></div>}
+    <div><dt>Applied</dt><dd>{ad.applications}</dd></div>
+   </dl>
+   {children}
+  </div>
+  <div className="tear-tabs" aria-hidden="true">
+   {Array.from({length:TABS},(_,tab)=><span key={tab} className={tab<ad.applications?'torn':''}>{rate} · {firstName(ad.learner.name)}</span>)}
+  </div>
+ </article>;
 }
 
 export function LearnerAdsPage(){
- const owner=useOwner('student');
- const toast=useToast();
+ const ads=useLoader(()=>adsService.mine(),[]);
+ const wallets=useLoader(()=>walletService.list(),[]);
  const[composing,setComposing]=useState(false);
- const[openAd,setOpenAd]=useState<string|null>(null);
-
- const ads=useLoader(()=>learningAdsService.byLearner(owner.ownerId),[owner.ownerId]);
  const rows=ads.data??[];
+ const balance=(currency:CurrencyCode)=>(wallets.data??[]).find(w=>w.currency===currency)?.available??0;
 
  return <DashboardShell role="student">
-  <div className="dash-welcome">
-   <div><h1>Learning ads</h1><p>Post what you want to learn and the hourly rate you are willing to pay. Tutors apply, you choose, and the session is booked at your rate.</p></div>
-   <button className="btn" onClick={()=>setComposing(true)}><Megaphone size={16}/> Post a learning ad</button>
+  <div className="workspace-title">
+   <div><h1>Learning ads</h1><p>Say what you want to learn and what you will pay an hour. Tutors apply with a time, you pick one, and the session is booked at your rate.</p></div>
+   <div><button className="btn" onClick={()=>setComposing(true)}><Megaphone size={16}/> Post an ad</button></div>
   </div>
-
-  <div className="stats-grid section-spaced-stats">
-   <StatCard label="Open ads" value={String(rows.filter(a=>a.status==='OPEN').length)} trend="Taking applications" icon={<Megaphone/>}/>
-   <StatCard label="Applications" value={String(rows.reduce((sum,a)=>sum+a.applicationCount,0))} trend="From tutors" icon={<Users/>}/>
-   <StatCard label="Filled" value={String(rows.filter(a=>a.status==='FILLED').length)} trend="Sessions booked" icon={<Check/>}/>
-  </div>
-
   {ads.error&&<p className="ledger-error">{ads.error}</p>}
-  <div className="panel wallet-panel">
-   <h3>Your ads</h3>
-   {ads.loading&&!rows.length?<p className="org-empty">Loading your ads…</p>
-    :!rows.length?<p className="org-empty">No ads yet. Post one to let tutors come to you.</p>
-    :<div className="ad-list">{rows.map(ad=><article key={ad.id} className="ad-card">
-     <div className="ad-head">
-      <div><h4>{ad.title}</h4><p>{ad.description}</p></div>
-      <span className={`ledger-status ${ad.status.toLowerCase()}`}>{ad.status.toLowerCase()}</span>
-     </div>
-     <div className="ad-meta"><SkillBadge>{ad.skill}</SkillBadge><span>{ad.level}</span><span><CalendarClock size={13}/> {ad.preferredTimes}</span><span>closes {relativeTime(ad.closesAt)}</span></div>
-     <RateLine ad={ad}/>
-     <div className="ad-actions">
-      <button type="button" className="btn ghost" onClick={()=>setOpenAd(openAd===ad.id?null:ad.id)}>{openAd===ad.id?'Hide applicants':`View applicants (${ad.applicationCount})`}</button>
-      {ad.status==='OPEN'&&<button type="button" className="text-danger" onClick={async()=>{
-       try{await learningAdsService.close(ad.id);await ads.reload();toast('Ad closed')}
-       catch(problem){toast(problem instanceof Error?problem.message:'Could not close that ad')}
-      }}>Close ad</button>}
-     </div>
-     {openAd===ad.id&&<Applicants ad={ad} onChanged={()=>ads.reload()}/>}
-    </article>)}</div>}
-  </div>
-
-  {composing&&<AdComposer ownerId={owner.ownerId} ownerName={owner.name} onClose={()=>setComposing(false)} onDone={async()=>{await ads.reload();toast('Learning ad posted')}}/>}
+  {ads.loading&&!rows.length?<p className="board-note">Loading your ads…</p>
+   :!rows.length?<p className="board-note">Nothing pinned up yet. Post an ad and tutors come to you.</p>
+   :<div className="noticeboard my-ads">{rows.map(ad=><div key={ad.id} className="my-ad">
+    <Flyer ad={ad}>
+     {ad.status==='open'&&<div className="flyer-actions"><CloseAd ad={ad} onDone={ads.reload}/></div>}
+    </Flyer>
+    {ad.applications>0?<Replies ad={ad} balance={balance(ad.currency)} onChange={async()=>{await Promise.all([ads.reload(),wallets.reload()])}}/>
+     :<p className="board-note">{ad.status==='open'?`No one has applied yet. It stays on the board until ${new Date(ad.closesAt).toLocaleDateString('en',{day:'numeric',month:'long'})}.`:'Nobody applied.'}</p>}
+   </div>)}</div>}
+  {composing&&<Dialog title="Post a learning ad" text="Tutors apply to it, and whoever you accept is paid the rate you set here." onClose={()=>setComposing(false)}>
+   <AdForm balance={balance} onDone={async()=>{setComposing(false);await ads.reload()}}/>
+  </Dialog>}
  </DashboardShell>;
 }
 
-function Applicants({ad,onChanged}:{ad:LearningAd;onChanged:()=>Promise<unknown>}){
+function CloseAd({ad,onDone}:{ad:LearningAd;onDone:()=>Promise<unknown>}){
  const toast=useToast();
  const[busy,setBusy]=useState(false);
- const applications=useLoader(()=>learningAdsService.applications(ad.id),[ad.id]);
- const rows=applications.data??[];
-
- const act=async(work:()=>Promise<unknown>,message:string)=>{
+ const close=async()=>{
   setBusy(true);
-  try{await work();await applications.reload();await onChanged();toast(message)}
-  catch(problem){toast(problem instanceof Error?problem.message:'That action did not go through')}
+  try{await adsService.close(ad.id);toast('Ad taken down');await onDone()}
+  catch(problem){toast(errorOf(problem,'That ad could not be closed.'))}
   finally{setBusy(false)}
  };
-
- if(applications.loading&&!rows.length)return <p className="org-empty">Loading applicants…</p>;
- if(!rows.length)return <p className="org-empty">No tutor has applied yet.</p>;
-
- return <div className="applicant-list">{rows.map(application=><div key={application.id} className="applicant">
-  <div className="avatar sm">{application.tutorName.split(' ').map(part=>part[0]).join('')}</div>
-  <div className="applicant-body">
-   <div className="applicant-head"><strong>{application.tutorName}</strong><Stars rating={application.rating}/><span className={`ledger-status ${applicationTone[application.status]}`}>{applicationTone[application.status]}</span></div>
-   <small>{application.headline}</small>
-   <p>“{application.message}”</p>
-  </div>
-  {ad.status==='OPEN'&&application.status!=='DECLINED'&&<div className="applicant-actions">
-   {/* Accepting books the session at the ad's rate and escrows it immediately. */}
-   <button type="button" className="btn small" disabled={busy} onClick={()=>act(()=>learningAdsService.accept(application.id),`Session booked with ${application.tutorName} — ${formatMoney(prorate(ad.hourlyRate,ad.sessionMinutes),ad.currency)} held in escrow`)}>Accept &amp; book</button>
-   {application.status==='APPLIED'&&<button type="button" className="btn small ghost" disabled={busy} onClick={()=>act(()=>learningAdsService.shortlist(application.id),'Tutor shortlisted')}>Shortlist</button>}
-   <button type="button" className="text-danger" disabled={busy} onClick={()=>act(()=>learningAdsService.decline(application.id),'Application declined')}>Decline</button>
-  </div>}
- </div>)}</div>;
+ return <button className="text-danger" disabled={busy} onClick={close}>Take it down</button>;
 }
 
-function AdComposer({ownerId,ownerName,onClose,onDone}:{ownerId:string;ownerName:string;onClose:()=>void;onDone:()=>Promise<void>}){
- const[form,setForm]=useState({title:'',description:'',skill:skills[0]!,level:'Intermediate' as LearningAd['level'],currency:'USD' as CurrencyCode,rate:'',sessionMinutes:60,preferredTimes:''});
- const[busy,setBusy]=useState(false);
- const[error,setError]=useState<string|null>(null);
- const wallets=useLoader(()=>walletService.list(),[ownerId]);
- const set=<K extends keyof typeof form>(key:K,value:(typeof form)[K])=>setForm(current=>({...current,[key]:value}));
-
- const hourly=toMinor(form.rate,form.currency);
- const perSession=hourly>0?prorate(hourly,form.sessionMinutes):0;
- const wallet=wallets.data?.find(w=>w.currency===form.currency);
- const short=Boolean(wallet)&&wallet!.available<perSession;
-
- const submit=async(event:React.FormEvent)=>{
-  event.preventDefault();
-  if(!form.title.trim()){setError('Give your ad a title.');return}
-  if(hourly<=0){setError('Set the hourly rate you are willing to pay.');return}
-  setBusy(true);
-  try{
-   await learningAdsService.create({learnerId:ownerId,learnerName:ownerName,title:form.title,description:form.description,skill:form.skill,level:form.level,currency:form.currency,hourlyRate:hourly,sessionMinutes:form.sessionMinutes,preferredTimes:form.preferredTimes});
-   await onDone();
-   onClose();
-  }catch(problem){setError(problem instanceof Error?problem.message:'The ad could not be posted.')}
-  finally{setBusy(false)}
- };
-
- return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-  <form className="modal wallet-modal wide" onMouseDown={event=>event.stopPropagation()} onSubmit={submit}>
-   <h2>Post a learning ad</h2>
-   <p>Tutors apply to your ad, and whoever you accept is paid at the rate you set here.</p>
-   <label>Title<input value={form.title} onChange={event=>set('title',event.target.value)} placeholder="Weekly React and TypeScript coaching" autoFocus/></label>
-   <label>What do you want to work on?<textarea value={form.description} onChange={event=>set('description',event.target.value)} rows={3} placeholder="Describe your goal, your current level, and what a good session looks like…"/></label>
-   <div className="modal-row">
-    <label>Subject<select value={form.skill} onChange={event=>set('skill',event.target.value)}>{skills.map(skill=><option key={skill}>{skill}</option>)}</select></label>
-    <label>Level<select value={form.level} onChange={event=>set('level',event.target.value as LearningAd['level'])}><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></label>
-   </div>
-   <div className="modal-row">
-    <label>Currency<select value={form.currency} onChange={event=>set('currency',event.target.value as CurrencyCode)}>{CURRENCY_CODES.map(code=><option key={code} value={code}>{code} · {CURRENCIES[code].name}</option>)}</select></label>
-    <label>Your hourly rate<input inputMode="decimal" value={form.rate} onChange={event=>set('rate',event.target.value)} placeholder="36.00"/></label>
-    <label>Session length<select value={form.sessionMinutes} onChange={event=>set('sessionMinutes',Number(event.target.value))}><option value={30}>30 minutes</option><option value={60}>60 minutes</option><option value={90}>90 minutes</option></select></label>
-   </div>
-   <label>Preferred times<input value={form.preferredTimes} onChange={event=>set('preferredTimes',event.target.value)} placeholder="Weekday evenings, Europe/London"/></label>
-   {perSession>0&&<small className="modal-hint">A {form.sessionMinutes}-minute session costs {formatMoney(perSession,form.currency)}, escrowed from your {form.currency} wallet when you accept a tutor.{short&&' Your balance will not cover that yet.'}</small>}
-   {error&&<p className="ledger-error">{error}</p>}
-   <div><button type="button" className="btn ghost" onClick={onClose}>Cancel</button><button className="btn" disabled={busy}>{busy?'Posting…':'Post ad'}</button></div>
-  </form>
+/** The learner's side of the applications: each one a slip torn from the flyer. */
+function Replies({ad,balance,onChange}:{ad:LearningAd;balance:number;onChange:()=>Promise<void>}){
+ const replies=useLoader(()=>adsService.applications(ad.id),[ad.id]);
+ const rows=replies.data??[];
+ const reload=async()=>{await Promise.all([replies.reload(),onChange()])};
+ if(replies.loading&&!rows.length)return <p className="board-note">Loading replies…</p>;
+ return <div className="replies">
+  {replies.error&&<p className="ledger-error">{replies.error}</p>}
+  {ad.status==='open'&&balance<ad.sessionCost&&<p className="ad-warn">Your balance does not cover a session yet. <Link to="/student/wallet">Top up</Link> before you accept.</p>}
+  {rows.map(application=><Reply key={application.id} ad={ad} application={application} short={balance<ad.sessionCost} onChange={reload}/>)}
  </div>;
 }
 
-export function TutorAdBoardPage({role='tutor'}:{role?:WorkspaceRole}){
- const owner=useOwner(role);
+function Reply({ad,application,short,onChange}:{ad:LearningAd;application:AdApplication;short:boolean;onChange:()=>Promise<void>}){
  const toast=useToast();
+ const[busy,setBusy]=useState<string|null>(null);
+ const[error,setError]=useState<string|null>(null);
+ const live=ad.status==='open'&&(application.status==='applied'||application.status==='shortlisted');
+ const act=async(key:string,run:()=>Promise<unknown>,done:string)=>{
+  setBusy(key);setError(null);
+  try{await run();toast(done);await onChange()}
+  catch(problem){setError(errorOf(problem,'That did not work. Try again.'))}
+  finally{setBusy(null)}
+ };
+
+ return <article className={`reply-slip state-${application.status}`}>
+  {STAMP[application.status]&&<span className="slip-stamp">{STAMP[application.status]}</span>}
+  <header>
+   <Link to={`/tutors/${application.tutor.id}`}><strong>{application.tutor.name}</strong></Link>
+   {application.reviewCount>0&&<StarRow rating={Math.round(application.rating)}/>}
+  </header>
+  {application.headline&&<small>{application.headline}</small>}
+  <blockquote>{application.message}</blockquote>
+  <p className="slip-time"><CalendarClock size={14}/> First session {when(application.startsAt)}</p>
+  {error&&<p className="ledger-error">{error}</p>}
+  {live&&<div className="slip-actions">
+   <button className="btn small" disabled={Boolean(busy)||short} onClick={()=>act('accept',()=>adsService.accept(application.id),`Booked with ${application.tutor.name}`)}>
+    {busy==='accept'?'Booking…':`Accept and pay ${formatMoney(ad.sessionCost,ad.currency)}`}</button>
+   {application.status==='applied'&&<button className="btn small ghost" disabled={Boolean(busy)} onClick={()=>act('shortlist',()=>adsService.shortlist(application.id),'Shortlisted')}>Shortlist</button>}
+   <button className="text-danger" disabled={Boolean(busy)} onClick={()=>act('decline',()=>adsService.decline(application.id),'Application declined')}>Decline</button>
+  </div>}
+  {application.status==='accepted'&&<Link className="text-link" to="/student/lessons">See it in your lessons</Link>}
+ </article>;
+}
+
+function AdForm({balance,onDone}:{balance:(currency:CurrencyCode)=>number;onDone:()=>Promise<void>}){
+ const toast=useToast();
+ const skills=useLoader(()=>tutorService.skills(),[]);
+ const[form,setForm]=useState({title:'',description:'',skillCode:'',level:'beginner' as AdLevel,currency:'USD' as CurrencyCode,rate:'',sessionMinutes:60,preferredTimes:''});
+ const[busy,setBusy]=useState(false);
+ const[error,setError]=useState<string|null>(null);
+ const set=<K extends keyof typeof form>(key:K,value:(typeof form)[K])=>setForm(current=>({...current,[key]:value}));
+ const hourly=toMinor(form.rate||0,form.currency);
+ const cost=hourly>0?prorate(hourly,form.sessionMinutes):0;
+
+ const send=async(event:React.FormEvent)=>{
+  event.preventDefault();
+  setBusy(true);setError(null);
+  try{
+   const{rate:_,...rest}=form;
+   await adsService.post({...rest,hourlyRate:hourly});
+   toast('Your ad is up on the board');
+   await onDone();
+  }catch(problem){setError(errorOf(problem,'That ad could not be posted.'))}
+  finally{setBusy(false)}
+ };
+
+ return <form className="sheet-form ad-form" onSubmit={send}>
+  <label>Title<input value={form.title} onChange={e=>set('title',e.target.value)} placeholder="Conversational Spanish for travel" autoFocus/></label>
+  <label>What do you want to work on?<textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={3} placeholder="Your goal, where you are now, and what a good session looks like"/></label>
+  <div className="schedule-grid">
+   <label>Subject<select value={form.skillCode} onChange={e=>set('skillCode',e.target.value)}>
+    <option value="">Choose…</option>
+    {(skills.data??[]).map(skill=><option key={skill.id} value={skill.id}>{skill.name}</option>)}</select></label>
+   <label>Level<select value={form.level} onChange={e=>set('level',e.target.value as AdLevel)}>
+    {LEVELS.map(level=><option key={level} value={level}>{level[0]!.toUpperCase()+level.slice(1)}</option>)}</select></label>
+   <label>Currency<select value={form.currency} onChange={e=>set('currency',e.target.value as CurrencyCode)}>
+    {CURRENCY_CODES.map(code=><option key={code}>{code}</option>)}</select></label>
+   <label>You pay an hour<input inputMode="decimal" value={form.rate} onChange={e=>set('rate',e.target.value)} placeholder="30.00"/></label>
+   <label>Each session<select value={form.sessionMinutes} onChange={e=>set('sessionMinutes',Number(e.target.value))}>
+    {LENGTHS.map(minutes=><option key={minutes} value={minutes}>{minutes} minutes</option>)}</select></label>
+   <label>Good times <span>optional</span><input value={form.preferredTimes} onChange={e=>set('preferredTimes',e.target.value)} placeholder="Weekday evenings"/></label>
+  </div>
+  {cost>0&&<p className="ad-note">A session costs {formatMoney(cost,form.currency)}, held from your {form.currency} wallet when you accept a tutor.
+   {balance(form.currency)<cost&&' Your balance does not cover that yet.'}</p>}
+  {error&&<p className="ledger-error">{error}</p>}
+  <button className="btn" disabled={busy}>{busy?'Posting…':'Pin it to the board'}</button>
+ </form>;
+}
+
+export function TutorAdBoardPage(){
  const[skill,setSkill]=useState('');
  const[applyTo,setApplyTo]=useState<LearningAd|null>(null);
-
- const board=useLoader(()=>learningAdsService.board(skill||undefined),[skill]);
- const mine=useLoader(()=>learningAdsService.byTutor(owner.ownerId),[owner.ownerId]);
+ const skills=useLoader(()=>tutorService.skills(),[]);
+ const board=useLoader(()=>adsService.board(skill),[skill]);
+ const mine=useLoader(()=>adsService.myApplications(),[]);
  const ads=board.data??[];
- const applications=mine.data??[];
- const appliedTo=new Set(applications.filter(a=>a.status!=='WITHDRAWN').map(a=>a.adId));
+ const applications=(mine.data??[]).filter(application=>application.status!=='withdrawn');
+ const offerFor=(ad:LearningAd)=>applications.find(application=>application.ad?.id===ad.id);
 
- return <DashboardShell role={role}>
-  <div className="dash-welcome"><div>
-   <h1>Learning ad board</h1>
-   <p>Learners post what they want to learn and what they will pay per hour. Apply, and if they accept you teach at their rate.</p>
-  </div></div>
-
-  <div className="panel wallet-panel">
-   <div className="panel-head">
-    <h3>Open ads</h3>
-    <label className="inline-select">Subject
-     <select value={skill} onChange={event=>setSkill(event.target.value)}>
-      <option value="">All subjects</option>
-      {skills.map(item=><option key={item} value={item}>{item}</option>)}
-     </select>
-    </label>
-   </div>
-   {board.loading&&!ads.length?<p className="org-empty">Loading the board…</p>
-    :!ads.length?<p className="org-empty">No open ads in this subject right now.</p>
-    :<div className="ad-list">{ads.map(ad=><article key={ad.id} className="ad-card">
-     <div className="ad-head"><div><h4>{ad.title}</h4><p>{ad.description}</p></div></div>
-     <div className="ad-meta"><SkillBadge>{ad.skill}</SkillBadge><span>{ad.level}</span><span>{ad.learnerName}</span><span><CalendarClock size={13}/> {ad.preferredTimes}</span><span>{ad.applicationCount} applied</span></div>
-     <RateLine ad={ad}/>
-     <div className="ad-actions">
-      {appliedTo.has(ad.id)
-       ?<span className="applied-note"><Check size={14}/> You have applied</span>
-       :<button type="button" className="btn" onClick={()=>setApplyTo(ad)}><Send size={15}/> Apply to teach</button>}
-     </div>
-    </article>)}</div>}
+ return <DashboardShell role="tutor">
+  <div className="workspace-title">
+   <div><h1>Learning ad board</h1><p>Learners pin up what they want to learn and what they pay an hour. Offer a first session time, and if they accept, it is booked at their rate.</p></div>
+   <div><label className="inline-select">Subject<select value={skill} onChange={e=>setSkill(e.target.value)}>
+    <option value="">Everything</option>
+    {(skills.data??[]).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>
+  </div>
+  {board.error&&<p className="ledger-error">{board.error}</p>}
+  <div className="noticeboard">
+   {board.loading&&!ads.length?<p className="board-note">Loading the board…</p>
+    :!ads.length?<p className="board-note">Nothing pinned up {skill?'in this subject ':''}right now.</p>
+    :ads.map(ad=>{
+     const offer=offerFor(ad);
+     return <Flyer key={ad.id} ad={ad}>
+      <div className="flyer-actions">
+       {offer?.status==='declined'?<span className="flyer-offered">They went with someone else</span>
+        :offer?<><span className="flyer-offered"><Check size={14}/> You offered {when(offer.startsAt)}</span>
+         <button className="text-link" onClick={()=>setApplyTo(ad)}>Change</button></>
+        :<button className="btn small" onClick={()=>setApplyTo(ad)}><Send size={14}/> Apply to teach</button>}
+      </div>
+     </Flyer>;
+    })}
   </div>
 
-  <div className="panel wallet-panel">
-   <h3>Your applications</h3>
-   {!applications.length?<p className="org-empty">You have not applied to any ad yet.</p>
-    :<table className="org-table"><thead><tr><th>Ad</th><th>Message</th><th>Status</th></tr></thead><tbody>
-     {applications.map(application=><tr key={application.id}>
-      <td><strong>{ads.find(ad=>ad.id===application.adId)?.title??application.adId}</strong><span>{relativeTime(application.createdAt)}</span></td>
-      <td>{application.message}</td>
-      <td><span className={`ledger-status ${applicationTone[application.status]}`}>{applicationTone[application.status]}</span></td>
-     </tr>)}
-    </tbody></table>}
-  </div>
+  <section className="my-replies">
+   <h2>Your applications</h2>
+   {mine.error&&<p className="ledger-error">{mine.error}</p>}
+   {!applications.length?<p className="board-note">You have not applied to anything yet.</p>
+    :<div className="replies">{applications.map(application=><MyApplication key={application.id} application={application} onChange={async()=>{await Promise.all([mine.reload(),board.reload()])}}/>)}</div>}
+  </section>
 
-  {applyTo&&<ApplyDialog ad={applyTo} tutorId={owner.ownerId} tutorName={owner.name} onClose={()=>setApplyTo(null)}
-   onDone={async()=>{await Promise.all([board.reload(),mine.reload()]);toast('Application sent')}}/>}
+  {applyTo&&<Dialog title="Apply to teach" text={`${applyTo.title} · ${formatMoney(applyTo.hourlyRate,applyTo.currency)} an hour · ${applyTo.sessionMinutes} minutes`} onClose={()=>setApplyTo(null)}>
+   <ApplyForm ad={applyTo} offer={offerFor(applyTo)} onDone={async()=>{setApplyTo(null);await Promise.all([mine.reload(),board.reload()])}}/>
+  </Dialog>}
  </DashboardShell>;
 }
 
-function ApplyDialog({ad,tutorId,tutorName,onClose,onDone}:{ad:LearningAd;tutorId:string;tutorName:string;onClose:()=>void;onDone:()=>Promise<void>}){
- const profile=tutors.find(tutor=>tutor.id===tutorId);
- const[message,setMessage]=useState('');
+function MyApplication({application,onChange}:{application:AdApplication;onChange:()=>Promise<void>}){
+ const toast=useToast();
+ const[busy,setBusy]=useState(false);
+ const ad=application.ad;
+ const live=application.status==='applied'||application.status==='shortlisted';
+ const withdraw=async()=>{
+  setBusy(true);
+  try{await adsService.withdraw(application.id);toast('Application withdrawn');await onChange()}
+  catch(problem){toast(errorOf(problem,'That could not be withdrawn.'))}
+  finally{setBusy(false)}
+ };
+ return <article className={`reply-slip state-${application.status}`}>
+  {STAMP[application.status]&&<span className="slip-stamp">{STAMP[application.status]}</span>}
+  <header><strong>{ad?.title}</strong></header>
+  {ad&&<small>{ad.learner.name} · {formatMoney(ad.sessionCost,ad.currency)} a session</small>}
+  <p className="slip-time"><CalendarClock size={14}/> You offered {when(application.startsAt)}</p>
+  {live&&<div className="slip-actions"><button className="text-danger" disabled={busy} onClick={withdraw}>Withdraw</button></div>}
+  {application.status==='accepted'&&<Link className="text-link" to="/tutor/lessons">See it in your lessons</Link>}
+ </article>;
+}
+
+// A datetime-local value, in the browser's own timezone.
+const localInput=(date:Date)=>new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+
+function ApplyForm({ad,offer,onDone}:{ad:LearningAd;offer?:AdApplication;onDone:()=>Promise<void>}){
+ const toast=useToast();
+ const[message,setMessage]=useState(offer?.message??'');
+ const[startsAt,setStartsAt]=useState(offer?localInput(new Date(offer.startsAt)):'');
  const[busy,setBusy]=useState(false);
  const[error,setError]=useState<string|null>(null);
+ const learner=firstName(ad.learner.name);
 
- const submit=async(event:React.FormEvent)=>{
+ const send=async(event:React.FormEvent)=>{
   event.preventDefault();
-  if(message.trim().length<20){setError('Tell the learner how you would run this session.');return}
-  setBusy(true);
+  if(!startsAt){setError('Offer a time for the first session.');return}
+  setBusy(true);setError(null);
   try{
-   await learningAdsService.apply({adId:ad.id,tutorId,tutorName,headline:profile?.headline??'Programming tutor',rating:profile?.rating??5,message});
+   await adsService.apply(ad.id,message,new Date(startsAt).toISOString());
+   toast(offer?'Your offer is updated':`Application sent to ${learner}`);
    await onDone();
-   onClose();
-  }catch(problem){setError(problem instanceof Error?problem.message:'The application could not be sent.')}
+  }catch(problem){setError(errorOf(problem,'The application could not be sent.'))}
   finally{setBusy(false)}
  };
 
- return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-  <form className="modal wallet-modal" onMouseDown={event=>event.stopPropagation()} onSubmit={submit}>
-   <h2>Apply to teach</h2>
-   <p>{ad.title} · {formatMoney(ad.hourlyRate,ad.currency)}/hour · {ad.sessionMinutes} minutes</p>
-   <label>Your message
-    <textarea value={message} onChange={event=>setMessage(event.target.value)} rows={4} placeholder="How you would approach this, and what you have taught like it before…" autoFocus/>
-   </label>
-   <small className="modal-hint">If {ad.learnerName} accepts, the session is booked at their advertised rate of {formatMoney(ad.hourlyRate,ad.currency)} per hour and you are paid for the minutes you teach, minus the platform fee.</small>
-   {error&&<p className="ledger-error">{error}</p>}
-   <div><button type="button" className="btn ghost" onClick={onClose}>Cancel</button><button className="btn" disabled={busy}>{busy?'Sending…':'Send application'}</button></div>
-  </form>
- </div>;
+ return <form className="sheet-form" onSubmit={send}>
+  {ad.preferredTimes&&<p className="ad-note">{learner} prefers: {ad.preferredTimes}</p>}
+  <label>Your message<textarea value={message} onChange={e=>setMessage(e.target.value)} rows={4} placeholder="How you would run the session, and what you have taught like it before" autoFocus/></label>
+  <label>First session<input type="datetime-local" min={localInput(new Date())} value={startsAt} onChange={e=>setStartsAt(e.target.value)}/></label>
+  <p className="ad-note">If {learner} accepts, this time is booked for {ad.sessionMinutes} minutes and {formatMoney(ad.sessionCost,ad.currency)} is held from their wallet. You are paid for the minutes you teach, less the platform fee.</p>
+  {error&&<p className="ledger-error">{error}</p>}
+  <button className="btn" disabled={busy}>{busy?'Sending…':offer?'Update my offer':'Send application'}</button>
+ </form>;
 }

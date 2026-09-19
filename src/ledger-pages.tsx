@@ -84,7 +84,7 @@ export function SessionPaymentsPage({role}:{role:WorkspaceRole}){
     :<div className="ledger-list">{rows.map(payment=><article key={payment.id} className="ledger-row">
      <div className="ledger-main">
       <div className="ledger-title"><strong>{payment.topic}</strong><StatusPill status={payment.status}/></div>
-      <p>{payee?`Taught for ${payment.payerName}`:`with ${payment.payeeName}`} · {payment.source==='LEARNING_AD'?'from your learning ad':'direct booking'}</p>
+      <p>{payee?`Taught for ${payment.payerName}`:`with ${payment.payeeName}`} · {payment.source==='LEARNING_AD'?'from a learning ad':'direct booking'}</p>
       <div className="ledger-meta">
        <span>{formatMoney(payment.hourlyRate,payment.currency)}/hour</span>
        <span>{payment.billedMinutes===null?`${payment.scheduledMinutes} min scheduled`:`${payment.billedMinutes} of ${payment.scheduledMinutes} min billed`}</span>
