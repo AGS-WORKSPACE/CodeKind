@@ -1,11 +1,12 @@
 import{useEffect,useState}from'react';
 import{Link}from'react-router-dom';
-import{ArrowRight,BookOpen,CalendarDays,ClipboardList,Clock,Mail,Search,Users}from'lucide-react';
+import{BookOpen,CalendarDays,ClipboardList,Clock,Mail,Search,Users}from'lucide-react';
 import{DashboardShell,StatCard}from'./components';
 import{useAuth}from'./auth';
 import{useLoader}from'./hooks/use-payments';
 import{authService}from'./services/auth.service';
 import{scheduleService,type Booking}from'./services/schedule.service';
+import{CurrentPath}from'./paths-pages';
 import{assignmentsService}from'./services/assignments.service';
 import{tutorService}from'./services/tutor.service';
 import{relativeTime}from'./lib/money';
@@ -57,9 +58,8 @@ export function StudentDashboard(){
     {following&&<SessionRow booking={following}/>}
    </section>
    <section className="panel">
-    <div className="panel-head"><h2>Current path</h2></div>
-    <p className="org-empty">Enrol in a learning path to track your progress here.</p>
-    <Link className="text-link" to="/learning-paths">Browse learning paths <ArrowRight/></Link>
+    <div className="panel-head"><h2>Current path</h2><Link className="text-link" to="/student/learning-paths">View all</Link></div>
+    <CurrentPath/>
    </section>
    <section className="panel">
     <div className="panel-head"><h2>Assignments</h2><Link className="text-link" to="/student/assignments">View all</Link></div>

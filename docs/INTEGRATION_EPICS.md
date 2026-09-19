@@ -39,8 +39,9 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Reviews and ratings (epic 9) | ✅ | Learners review a finished session; ratings on cards, profiles, search and the tutor dashboard. |
 | Messages (epic 10) | ✅ | Conversations between two people who share a session, with unread counts and notifications. |
 | Assignments (epic 11) | ✅ | Tutors set work after a session, learners hand it in, tutors review it; on the summary and dashboard too. |
+| Learning paths (epic 12) | ✅ | Admins write paths; learners enrol and tick modules off on a route line; dashboard panel live. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
-| Student dashboard | 🟡 | Name, stats, next session and suggested tutors are live. Path and assignments wait on epics 11–12. |
+| Student dashboard | ✅ | Name, stats, next session, current path, assignments and suggested tutors are all live. |
 
 ---
 
@@ -185,9 +186,8 @@ The pages that showed invented content now either read the API or say what is mi
   reviews. The invented testimonials, the fake customer logo strip and the "4.9 from 12,000+
   sessions" claim are gone; `GET /stats` supplies the numbers, and each one is hidden until there
   is something to count.
-- **Learning paths** keep their route and say plainly they are not built yet, with the invented
-  curriculum deleted; they come with epic 12. The fake conversation and demo assignments were
-  replaced by the real messages (epic 10) and assignments (epic 11).
+- The fake conversation, demo assignments and invented curriculum were replaced by the real
+  messages (epic 10), assignments (epic 11) and learning paths (epic 12).
 - **The admin control centre** shows real counts, applications waiting and open appeals. Every
   section still without a backend says so rather than showing a demo table, and the mock admin
   repository is deleted. Epic 15 fills them in.
@@ -227,12 +227,27 @@ The pages that showed invented content now either read the API or say what is mi
   answer and the feedback live on the same row, since there is one submission.
 - The learner is told when work is set and reviewed; the tutor the first time it is handed in.
 
-## 12. Learning paths
+## 12. Learning paths ✅
 
 **UI**
-- Enrol, track module progress, and show the current path on the student dashboard.
+- `/learning-paths` lists published paths as a numbered index, each with a miniature route; a
+  path's page draws its modules as stations on a line, filled as the learner passes them.
+- A learner starts a path, taps a station to tick a module off, and can leave (which forgets their
+  progress). `/student/learning-paths` and the dashboard panel show where they are.
+- A path's subject links it to the tutors who teach it.
+- Admins write paths at `/admin/learning-paths`, with a live preview of the route. A draft stays
+  hidden until published.
 
-**Backend:** paths, enrolments and progress.
+**Backend**
+- Public `GET /paths` and `GET /paths/:slug`; for a learner `GET /paths/mine`,
+  `GET /paths/:slug/progress`, `POST`/`DELETE /paths/:slug/enrol` and
+  `POST /paths/:slug/modules/:moduleId` (`{done}`).
+- Admin `GET /admin/paths`, `GET /admin/paths/:slug`, and `POST /admin/paths` and
+  `PUT /admin/paths/:id`, which need the new `paths.write` permission.
+- Editing keeps module ids, so learners keep progress on the modules that stay; a removed module
+  takes its progress with it. Finishing the last module finishes the path, and unticking reopens it.
+
+**Content:** no paths ship with the code. They are written in the admin centre.
 
 ## 13. Learning ads
 
