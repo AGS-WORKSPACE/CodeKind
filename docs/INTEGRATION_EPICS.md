@@ -40,6 +40,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Messages (epic 10) | ✅ | Conversations between two people who share a session, with unread counts and notifications. |
 | Assignments (epic 11) | ✅ | Tutors set work after a session, learners hand it in, tutors review it; on the summary and dashboard too. |
 | Learning paths (epic 12) | ✅ | Admins write paths; learners enrol and tick modules off on a route line; dashboard panel live. |
+| Recurring schedules | ✅ | A tutor proposes days, time and dates; the learner accepts; each session is paid when it opens. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | ✅ | Name, stats, next session, current path, assignments and suggested tutors are all live. |
 
@@ -248,6 +249,28 @@ The pages that showed invented content now either read the API or say what is mi
   takes its progress with it. Finishing the last module finishes the path, and unticking reopens it.
 
 **Content:** no paths ship with the code. They are written in the admin centre.
+
+## Recurring schedules ✅
+
+For a standing arrangement, such as Wednesday to Friday, 8 to 11am, for three months.
+
+**UI**
+- A tutor proposes from My Students: topic, days, start time, length (up to four hours), and the
+  date range, with a count of the sessions and a week timetable as a preview.
+- Both sides see it under Schedules on the lessons page; the learner accepts or declines, and
+  either can cancel the rest. The learner sees how many sessions their balance covers.
+- Each session is an ordinary lesson tagged with its cost. The lobby says what opening it takes,
+  and blocks joining when the wallet cannot cover it; the tutor sees that it waits on payment.
+- The booking screen now offers sessions of up to four hours.
+
+**Backend**
+- `GET /series`, `POST /series` (tutor), `POST /series/:id/accept|decline|cancel`.
+- Only a learner who has booked the tutor can be sent a schedule. Clashing dates are named.
+- The price is fixed when proposed, at the tutor's regular rate. Accepting books every date at
+  once and moves no money. **Each session is charged when the learner opens it**; with too little
+  in the wallet it will not open for anyone, and nothing is charged. A session nobody paid for is
+  closed by the sweep as never opened, not as taught.
+- Times are kept in the tutor's timezone, so 8am stays 8am across a clock change.
 
 ## 13. Learning ads
 

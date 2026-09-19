@@ -1,4 +1,5 @@
 import{useState}from'react';
+import type{CurrencyCode}from'./types/payments';
 import{Link}from'react-router-dom';
 import{CalendarDays,Clock,X}from'lucide-react';
 import{DashboardShell,SkillBadge}from'./components';
@@ -7,6 +8,8 @@ import{useToast}from'./ui-feedback';
 import{useLoader}from'./hooks/use-payments';
 import{FreeTimes,timeLabel}from'./free-times';
 import{MessageButton}from'./messages-page';
+import{SchedulesPanel}from'./series-panel';
+import{formatMoney}from'./lib/money';
 import{endsAt,scheduleService,type Booking,type LessonView}from'./services/schedule.service';
 
 const TABS:[LessonView,string][]=[['upcoming','Upcoming'],['past','Past'],['cancelled','Cancelled']];
@@ -25,6 +28,7 @@ export function LessonsPage({role}:{role:'student'|'tutor'}){
 
  return <DashboardShell role={role}>
   <PageTitle title={teaching?'Lessons':'My lessons'} text="Join upcoming sessions, move or cancel them, and look back on past ones." action={teaching?undefined:'Book a lesson'}/>
+  <SchedulesPanel role={role} onChange={lessons.reload}/>
   <div className="workspace-tabs">{TABS.map(([value,name])=><button type="button" className={view===value?'active':''} onClick={()=>setView(value)} key={value}>{name.toUpperCase()}</button>)}</div>
   {lessons.error&&<p className="ledger-error">{lessons.error}</p>}
   {lessons.loading&&!lessons.data?<div className="workspace-skeleton">{[1,2,3].map(i=><i key={i}/>)}</div>
@@ -52,6 +56,7 @@ function LessonCard({booking,teaching,onCancel,onMove}:{booking:Booking;teaching
     <span><Clock/> {timeLabel(booking.startsAt)}</span>
     <span>{booking.durationMinutes} minutes</span>
    </div>
+   {booking.seriesId&&booking.sessionCost!==undefined&&<small className="series-tag">Part of a schedule · {formatMoney(booking.sessionCost,booking.currency as CurrencyCode)}, paid when it opens</small>}
    {booking.notes&&<small>Notes: {booking.notes}</small>}
    {booking.cancelReason&&<small>Reason: {booking.cancelReason}</small>}
   </div>

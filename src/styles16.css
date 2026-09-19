@@ -3208,3 +3208,39 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 .path-detail .detail-layout h2 { margin: 0 0 14px; }
 .path-detail .route-hint { margin: -6px 0 18px; }
 .path-detail .path-standing { margin-top: 18px; }
+
+/* Schedules: a week drawn as seven day columns, the session a bar at its time of day. */
+.week-strip { display: inline-grid; grid-template-columns: repeat(7, 12px); gap: 4px; align-items: end; flex: none; }
+.week-strip > span { display: grid; gap: 4px; justify-items: center; }
+.week-strip i { position: relative; width: 12px; height: 44px; border-radius: 3px; background: repeating-linear-gradient(#e4ebe7 0 1px, transparent 1px 11px); border: 1px solid #e4ebe7; }
+.week-strip .on i { border-color: #b7d8c8; background-color: #f3faf6; }
+.week-strip b { position: absolute; left: 1px; right: 1px; border-radius: 2px; background: #2e8763; }
+.week-strip small { font: 8px DM Mono, ui-monospace, monospace; color: #9aa9a3; }
+.week-strip .on small { color: #2e8763; font-weight: 700; }
+.schedules { margin: 4px 0 18px; display: grid; gap: 10px; }
+.schedules h2 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; }
+.schedule { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-left: 3px solid #2e8763; border-radius: 12px; }
+.schedule.state-proposed { border-left-color: #e2a33c; }
+.schedule-copy { display: grid; gap: 3px; min-width: 0; }
+.schedule-copy small { font: 9px DM Mono, ui-monospace, monospace; letter-spacing: .1em; color: #8a9a94; }
+.schedule-copy strong { font-size: 13px; }
+.schedule-copy p { margin: 0; font-size: 10.5px; color: #5f6f69; }
+.schedule-copy .schedule-note { color: #2e8763; }
+.schedule-copy .schedule-warn { color: #b3542d; }
+.schedule-actions { display: flex; gap: 8px; align-items: center; }
+.schedule-actions .text-danger { border: 0; background: none; cursor: pointer; }
+.schedule-form .day-picker { border: 0; padding: 0; margin: 0; display: flex; gap: 5px; flex-wrap: wrap; }
+.schedule-form .day-picker legend { font-size: 10px; font-weight: 700; margin-bottom: 5px; }
+.day-picker button { min-width: 44px; padding: 7px 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: 600 10px DM Mono, ui-monospace, monospace; cursor: pointer; }
+.day-picker button.on { background: #12281f; color: #fff; border-color: #12281f; }
+.schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.schedule-preview { display: flex; align-items: center; gap: 14px; padding: 12px; background: #f3faf6; border-radius: 10px; font-size: 10.5px; color: #3c4b45; }
+.series-tag { color: #2e8763 !important; }
+.lobby-cost { font-size: 10px; color: #3c4b45; background: #f3faf6; border-radius: 8px; padding: 9px 11px; margin: 0 0 10px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.lobby-cost.short { background: #fdf1ea; color: #9a4424; }
+.lobby-cost a { color: inherit; font-weight: 700; text-decoration: underline; }
+@media (max-width: 700px) {
+  .schedule { grid-template-columns: auto minmax(0, 1fr); }
+  .schedule-actions { grid-column: 1 / -1; }
+  .schedule-grid { grid-template-columns: 1fr; }
+}

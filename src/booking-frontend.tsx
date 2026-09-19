@@ -32,7 +32,7 @@ export function FrontendBooking(){
 function BookingFlow({tutor}:{tutor:Tutor}){
   const[step,setStep]=useState(1);
   const[type,setTypeState]=useState<LessonType>('TRIAL');
-  const[duration,setDuration]=useState<30|60>(30);
+  const[duration,setDuration]=useState(30);
   const[selectedDate,setSelectedDate]=useState(()=>dateKey(new Date(Date.now()+86400000)));
   const[visibleMonth,setVisibleMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
   // The chosen start as an ISO instant; cleared whenever the date or length changes.
@@ -75,7 +75,7 @@ function BookingFlow({tutor}:{tutor:Tutor}){
         <span className="eyebrow">STEP {step} OF 6</span>
         <h1>{titles[step-1]}</h1>
         {step===1&&<Choices value={type} onChange={value=>setType(value as LessonType)} items={[['TRIAL','Trial lesson','A 30-minute introduction to meet your tutor and align on your goals.'],['REGULAR','Regular lesson','Choose a focused 30-minute lesson or a deeper 60-minute session.']]}/>} 
-        {step===2&&(type==='TRIAL'?<div className="trial-duration"><Sparkles/><div><strong>30-minute trial lesson</strong><p>Trial lessons have one fixed duration so you can meet your tutor and plan what comes next.</p></div><Check/></div>:<Choices value={String(duration)} onChange={value=>{setDuration(Number(value) as 30|60);setStartsAt('')}} items={[['30','30 minutes','A focused lesson for one topic or code review.'],['60','60 minutes','Deeper teaching, guided practice, and questions.']]}/>)}
+        {step===2&&(type==='TRIAL'?<div className="trial-duration"><Sparkles/><div><strong>30-minute trial lesson</strong><p>Trial lessons have one fixed duration so you can meet your tutor and plan what comes next.</p></div><Check/></div>:<Choices value={String(duration)} onChange={value=>{setDuration(Number(value));setStartsAt('')}} items={[['30','30 minutes','A focused lesson for one topic or code review.'],['60','60 minutes','Deeper teaching, guided practice, and questions.'],['120','2 hours','A working session: build something together.'],['180','3 hours','A half-day block, with room for a break.'],['240','4 hours','The longest session: a full workshop.']]}/>)}
         {step===3&&<BookingCalendar month={visibleMonth} selected={selectedDate} onMonthChange={setVisibleMonth} onSelect={value=>{setSelectedDate(value);setStartsAt('')}}/>} 
         {step===4&&<FreeTimes tutorId={tutor.id} date={selectedDate} duration={duration} value={startsAt} onChange={setStartsAt}/>} 
         {step===5&&<div className="review-booking"><Summary tutor={tutor.name} type={type} duration={duration} date={selectedDate} time={time} price={price} rate={hourlyRate}/><label className="student-note">Anything your tutor should know?<textarea value={note} onChange={event=>setNote(event.target.value)} placeholder="Share your goals or what you’d like to work on…"/></label></div>} 

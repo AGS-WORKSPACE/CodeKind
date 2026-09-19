@@ -1,6 +1,6 @@
 import{ApiError,api,offlineFallback}from'./api';
 
-export type Booking={id:string;tutor:{id:string;name:string};learner:{id:string;name:string};skillCode:string;skill:string;topic:string;notes:string;startsAt:string;durationMinutes:number;status:'scheduled'|'completed'|'cancelled';cancelReason:string|null};
+export type Booking={id:string;tutor:{id:string;name:string};learner:{id:string;name:string};skillCode:string;skill:string;topic:string;notes:string;startsAt:string;durationMinutes:number;status:'scheduled'|'completed'|'cancelled';cancelReason:string|null;seriesId?:string;sessionCost?:number;currency?:string};
 export type BookingInput={tutorId:string;skillCode?:string;topic:string;notes?:string;startsAt:string;durationMinutes:number};
 export type LessonView='upcoming'|'past'|'cancelled';
 export type Busy={startsAt:string;endsAt:string};
