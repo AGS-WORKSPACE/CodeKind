@@ -1,5 +1,6 @@
 import{useMemo,useState}from'react';
 import{Check,Search,X}from'lucide-react';
+import{SearchSelect}from'./search-select';
 import{useLoader}from'./hooks/use-payments';
 import{useReference}from'./services/reference.service';
 import{languages as offlineLanguages}from'./data/languages';
@@ -54,22 +55,17 @@ export function SkillPicker({chosen,onToggle}:{chosen:string[];onToggle:(code:st
  </div>;
 }
 
-/* Languages are a short list, so they are all on show and toggled in place. They are stored by
-   name rather than by code, which is also what a learner filters tutors by. */
+/* Languages are added one at a time from the same kind of dropdown as country and timezone, and
+   sit underneath as chips. They are stored by name, which is what a learner filters tutors by. */
 export function LanguagePicker({label,chosen,onToggle}:{label:string;chosen:string[];onToggle:(name:string)=>void}){
  const items=useReference('languages',()=>offlineLanguages.map(name=>({code:name.toLowerCase(),label:name})));
  // A language typed in before this list existed stays on the profile until the tutor takes it off.
  const names=[...new Set([...items.map(item=>item.label),...chosen])].sort((a,b)=>a.localeCompare(b));
- return <fieldset className="tag-field">
-  <legend>{label}</legend>
-  <div className="tag-box">
-   {chosen.length>0&&<ul className="shelf-tray">{chosen.map(name=>
-    <li key={name}>{name}<button type="button" aria-label={`Remove ${name}`} onClick={()=>onToggle(name)}><X size={13}/></button></li>)}</ul>}
-   <div className="tag-pick">{names.map(name=>{
-    const on=chosen.includes(name);
-    return <button type="button" key={name} className={on?'on':undefined} aria-pressed={on} onClick={()=>onToggle(name)}>
-     {on&&<Check size={13}/>}{name}</button>;
-   })}</div>
-  </div>
- </fieldset>;
+ const left=names.filter(name=>!chosen.includes(name));
+ return <div className="language-pick">
+  <SearchSelect label={label} placeholder={chosen.length?'Add another language':'Search languages'}
+   value="" options={left.map(name=>({value:name,label:name}))} onChange={name=>name&&onToggle(name)}/>
+  {chosen.length>0&&<ul className="shelf-tray">{chosen.map(name=>
+   <li key={name}>{name}<button type="button" aria-label={`Remove ${name}`} onClick={()=>onToggle(name)}><X size={13}/></button></li>)}</ul>}
+ </div>;
 }

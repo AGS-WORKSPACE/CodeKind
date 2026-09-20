@@ -110,6 +110,8 @@ function AccountForm({tab,account}:{tab:string;account:ReturnType<typeof useAcco
  </SettingsForm>;
 }
 
+// Years and money cannot be negative, whatever is typed or pasted into the field.
+const positive=(value:string)=>{const number=Number(value);return Number.isFinite(number)&&number>0?number:0};
 const EMPTY_PROFILE:TutorProfileInput={headline:'',bio:'',yearsOfExperience:0,teachingExperience:'',languages:[],hourlyRate:0,trialRate:0,githubUrl:'',portfolioUrl:'',linkedinUrl:'',skills:[]};
 const toInput=(p:TutorProfile):TutorProfileInput=>({...p,githubUrl:p.githubUrl??'',portfolioUrl:p.portfolioUrl??'',linkedinUrl:p.linkedinUrl??'',skills:p.skills.map(({code,yearsExperience,isPrimary})=>({code,yearsExperience,isPrimary}))});
 export const STATUS_NOTE:Record<TutorStatus,string>={
@@ -131,12 +133,12 @@ function TutorProfileForm({tab,profile}:{tab:string;profile:ProfileDraft}){
   <SkillPicker chosen={draft.skills.map(s=>s.code)} onToggle={toggle}/>
  </SettingsForm>;
  if(tab==='EXPERIENCE')return <SettingsForm key={tab} title="Experience" text="Tell learners what you have built and taught." onSave={save}>
-  <label>Years of experience<input type="number" min={0} value={draft.yearsOfExperience} onChange={e=>set('yearsOfExperience',Number(e.target.value))}/></label>
+  <label>Years of experience<input type="number" min={0} value={draft.yearsOfExperience} onChange={e=>set('yearsOfExperience',positive(e.target.value))}/></label>
   <label>Teaching experience<textarea value={draft.teachingExperience} onChange={e=>set('teachingExperience',e.target.value)}/></label>
   <LanguagePicker label="Languages you teach in" chosen={draft.languages} onToggle={name=>set('languages',draft.languages.includes(name)?draft.languages.filter(x=>x!==name):[...draft.languages,name])}/>
  </SettingsForm>;
  if(tab==='PRICING')return <SettingsForm key={tab} title="Pricing" text="Rates are in US dollars. You are billed per minute taught." onSave={save}>
-  <div className="two"><label>Hourly rate<input type="number" min={0} step="0.01" value={draft.hourlyRate} onChange={e=>set('hourlyRate',Number(e.target.value))}/></label><label>Trial rate<input type="number" min={0} step="0.01" value={draft.trialRate} onChange={e=>set('trialRate',Number(e.target.value))}/></label></div>
+  <div className="two"><label>Hourly rate<input type="number" min={0} step="0.01" value={draft.hourlyRate} onChange={e=>set('hourlyRate',positive(e.target.value))}/></label><label>Trial rate<input type="number" min={0} step="0.01" value={draft.trialRate} onChange={e=>set('trialRate',positive(e.target.value))}/></label></div>
  </SettingsForm>;
  if(tab==='PORTFOLIO')return <SettingsForm key={tab} title="Portfolio" text="Links that show your work." onSave={save}>
   <label>GitHub<input type="url" value={draft.githubUrl} onChange={e=>set('githubUrl',e.target.value)} placeholder="https://github.com/you"/></label>

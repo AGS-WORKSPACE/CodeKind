@@ -53,21 +53,35 @@ function OnboardingForm({user,saved}:{user:SessionUser|null;saved:TutorProfile|n
   headline:saved?.headline??'',bio:saved?.bio??'',yearsOfExperience:saved?.yearsOfExperience||2,teachingExperience:saved?.teachingExperience??'',
   githubUrl:saved?.githubUrl??'',portfolioUrl:saved?.portfolioUrl??'',linkedinUrl:saved?.linkedinUrl??'',hourlyRate:saved?.hourlyRate||35,trialRate:saved?.trialRate||20});
  const set=(key:keyof typeof form,value:string|number)=>setForm(current=>({...current,[key]:value}));
+ // Years and money cannot be negative, and this form posts on a button rather than through a <form>,
+ // so the value is held at zero here as well as barred in the field.
+ const positive=(value:string)=>{const number=Number(value);return Number.isFinite(number)&&number>0?number:0};
  const field=(label:string,key:keyof typeof form,type='text')=>
-  <label>{label}<input type={type} value={form[key]} onChange={e=>set(key,type==='number'?Number(e.target.value):e.target.value)}/></label>;
+  <label>{label}<input type={type} min={type==='number'?0:undefined} step={type==='number'?'any':undefined} value={form[key]}
+   onChange={e=>set(key,type==='number'?positive(e.target.value):e.target.value)}/></label>;
  const toggle=(code:string)=>setChosen(current=>current.includes(code)?current.filter(x=>x!==code):[...current,code]);
  // Without these the profile saves as a draft and never reaches a reviewer, so the step holds.
  const blocked=step===1&&(!form.headline.trim()||!form.bio.trim())?'A headline and a short biography are needed to carry on.'
   :step===2&&!chosen.length?'Pick at least one subject you teach.':'';
 
+ const store=(submit:boolean)=>tutorService.saveProfile({headline:form.headline,bio:form.bio,yearsOfExperience:form.yearsOfExperience,
+  teachingExperience:form.teachingExperience,languages:spoken,
+  hourlyRate:form.hourlyRate,trialRate:form.trialRate,githubUrl:form.githubUrl,portfolioUrl:form.portfolioUrl,linkedinUrl:form.linkedinUrl,
+  skills:chosen.map((code,index)=>({code,yearsExperience:form.yearsOfExperience,isPrimary:index===0}))},submit);
+
+ /* Each step is kept as a draft as it is left, so an application picked up days later is still
+    there. It is held back from review until the last step. */
+ const carryOn=async()=>{
+  setStep(step+1);
+  if(user)await updateAccount({firstName:form.firstName,lastName:form.lastName,country:form.country,timezone:form.timezone}).catch(()=>{});
+  await store(false).catch(()=>{});
+ };
+
  const submit=async()=>{
   setError('');setBusy(true);
   try{
    if(user)await updateAccount({firstName:form.firstName,lastName:form.lastName,country:form.country,timezone:form.timezone});
-   const saved=await tutorService.saveProfile({headline:form.headline,bio:form.bio,yearsOfExperience:form.yearsOfExperience,
-    teachingExperience:form.teachingExperience,languages:spoken,
-    hourlyRate:form.hourlyRate,trialRate:form.trialRate,githubUrl:form.githubUrl,portfolioUrl:form.portfolioUrl,linkedinUrl:form.linkedinUrl,
-    skills:chosen.map((code,index)=>({code,yearsExperience:form.yearsOfExperience,isPrimary:index===0}))});
+   const saved=await store(true);
    toast(saved.status==='submitted'?'Application sent for review':'Profile saved');
    navigate('/tutor/dashboard');
   }catch(problem){setError(problem instanceof ApiError?problem.message:'Could not submit application')}
@@ -113,7 +127,7 @@ function OnboardingForm({user,saved}:{user:SessionUser|null;saved:TutorProfile|n
    {blocked&&<p className="apply-hint">{blocked}</p>}
    <div className="flow-actions">
     {step>1&&<button className="btn ghost" onClick={()=>setStep(step-1)}>Back</button>}
-    <button className="btn" disabled={Boolean(blocked)||busy} onClick={()=>step<3?setStep(step+1):submit()}>
+    <button className="btn" disabled={Boolean(blocked)||busy} onClick={()=>step<3?carryOn():submit()}>
      {busy?'Sending…':step<3?'Continue':'Submit application'} <ArrowRight/>
     </button>
    </div>
