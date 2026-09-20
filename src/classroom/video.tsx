@@ -25,7 +25,8 @@ function RemoteTile({call,them,link,large=false}:{call:PeerCall;them:CallParty;l
    {call.remote&&<StreamVideo key={soundBlocked?'blocked':'open'} stream={call.remote} muted={soundBlocked} contain={sharing} hidden={!connected||cameraOff} onBlocked={blocked}/>}
    {!connected?<div className="call-waiting"><div className="avatar-video">{initials(them.name)}</div><strong>{call.status==='CONNECTING'?`Connecting to ${first}…`:`Waiting for ${first} to join`}</strong>
      {/* Waiting is only true when we can be seen; otherwise say why the two sides cannot meet. */}
-     {link&&!link.open&&<small className="call-link-down">You are not connected to the call service{link.reason?`: ${link.reason}`:''}. {first} cannot see you yet.</small>}</div>
+     {link&&!link.open&&<small className="call-link-down">You are not connected to the call service{link.reason?`: ${link.reason}`:''}. {first} cannot see you yet.</small>}
+     {call.trouble&&<small className="call-link-down">{call.trouble}</small>}</div>
     :cameraOff?<div className="camera-off"><div>{initials(them.name)}</div>{!starting&&<CameraOff/>}<span>{starting?`${first} is starting their camera…`:`${first}’s camera is off`}</span></div>:null}
    {soundBlocked&&<button type="button" className="sound-unlock" onClick={()=>setSoundBlocked(false)}><Volume2/> Turn on {first}’s sound</button>}
   </div>

@@ -36,7 +36,17 @@ export type Signal=
  |{type:'ice';from:string;to:string;candidate:RTCIceCandidateInit}
  |{type:'media';from:string;muted:boolean;camera:boolean;sharing:boolean;ready:boolean}
  |{type:'end';from:string;attendedSeconds:number}
- |{type:'bye';from:string};
+ |{type:'bye';from:string}
+ // The whiteboard travels the same way: one message per finished stroke, and one to take it back.
+ |{type:'board';from:string;stroke:BoardStroke}
+ |{type:'board-undo';from:string;strokeId:string}
+ |{type:'board-clear';from:string};
+
+/** A stroke in board space: every point is a fraction of the width and height, so two windows of
+    different sizes draw the same thing. */
+export type BoardStroke={id:string;colour:string;width:number;points:{x:number;y:number}[]};
+export type BoardLink={send:(stroke:BoardStroke)=>void;undo:(strokeId:string)=>void;clear:()=>void;subscribe:(handler:(event:BoardEvent)=>void)=>()=>void};
+export type BoardEvent={kind:'stroke';stroke:BoardStroke}|{kind:'undo';strokeId:string}|{kind:'clear'};
 
 export type SignalingChannel={send:(signal:Signal)=>void;subscribe:(handler:(signal:Signal)=>void)=>()=>void;close:()=>void};
 
@@ -80,6 +90,8 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  const[camera,setCamera]=useState(startCamera);
  const[share,setShare]=useState<MediaStream|null>(null);
  const[ended,setEnded]=useState<{attendedSeconds:number}|null>(null);
+ const[trouble,setTrouble]=useState<string|null>(null);
+ const boardHandlers=useRef(new Set<(event:BoardEvent)=>void>());
  const media=useRef({muted:startMuted,camera:startCamera,sharing:false});
  const nameRef=useRef(name);nameRef.current=name;
  const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;setScreen:(track:MediaStreamTrack|null)=>void;stream:MediaStream|null;me:string;connection:()=>RTCPeerConnection|null}|null>(null);
@@ -87,6 +99,11 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  /* Without a signalling service the two browsers cannot find each other, so the room says so
     rather than sitting on "waiting" forever. */
  const unavailable=signaling?null:'Live video is not set up on this server yet.';
+ // A call that cannot find a path between the two networks needs a relay, so name that as the cause.
+ const relayed=iceServers.some(server=>[server.urls].flat().some(url=>String(url).startsWith('turn')));
+ const noPath=relayed
+  ?'The call could not find a way through either network. Try again, or use another network.'
+  :'The call could not find a way through either network. This server has no TURN relay set up, which is usually the reason.';
 
  useEffect(()=>{
   if(!signaling)return;
@@ -97,6 +114,7 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
   let peerId:string|null=null;
   let stream:MediaStream|null=null;
   let queued:RTCIceCandidateInit[]=[];
+  let slow:ReturnType<typeof setTimeout>|undefined;
   let settled=false; // the camera/mic request has finished, one way or the other
   const send=(signal:Signal)=>{if(!disposed)channel.send(signal)};
   const announce=()=>send({type:'media',from:me,ready:settled,sharing:media.current.sharing,muted:media.current.muted||!stream?.getAudioTracks().length,camera:media.current.camera&&Boolean(stream?.getVideoTracks().length)});
@@ -119,7 +137,16 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
    const incoming=new MediaStream();
    conn.ontrack=event=>{if(conn!==pc)return;incoming.addTrack(event.track);setRemote(new MediaStream(incoming.getTracks()))};
    conn.onicecandidate=event=>{if(event.candidate)send({type:'ice',from:me,to:other,candidate:event.candidate.toJSON()})};
-   conn.onconnectionstatechange=()=>{if(conn!==pc)return;const state=conn.connectionState;if(state==='connected')setStatus('CONNECTED');else if(state==='disconnected')setStatus('CONNECTING');else if(state==='failed')reset()};
+   conn.onconnectionstatechange=()=>{
+    if(conn!==pc)return;
+    const state=conn.connectionState;
+    if(state==='connected'){setStatus('CONNECTED');setTrouble(null);clearTimeout(slow)}
+    else if(state==='disconnected')setStatus('CONNECTING');
+    else if(state==='failed'){setTrouble(noPath);reset()}
+   };
+   // Connecting normally takes a second or two; a minute of it means the media has nowhere to go.
+   clearTimeout(slow);
+   slow=setTimeout(()=>{if(conn===pc&&conn.connectionState!=='connected')setTrouble(noPath)},20000);
    setStatus('CONNECTING');
    return conn;
   };
@@ -157,6 +184,9 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
      if(pc.remoteDescription)await pc.addIceCandidate(signal.candidate).catch(()=>{});else queued.push(signal.candidate);
      return;
     case 'media':setPeer(current=>current&&{...current,muted:signal.muted,camera:signal.camera,sharing:signal.sharing,ready:signal.ready});return;
+    case 'board':boardHandlers.current.forEach(handler=>handler({kind:'stroke',stroke:signal.stroke}));return;
+    case 'board-undo':boardHandlers.current.forEach(handler=>handler({kind:'undo',strokeId:signal.strokeId}));return;
+    case 'board-clear':boardHandlers.current.forEach(handler=>handler({kind:'clear'}));return;
     case 'end':setEnded({attendedSeconds:signal.attendedSeconds});return;
     case 'bye':if(!peerId||peerId===signal.from)reset();return;
    }
@@ -204,6 +234,15 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
 
  // Connection statistics for telemetry; null while no peer is connected.
  const stats=useCallback(async()=>link.current?.connection()?.getStats()??null,[]);
- return{status,mediaReady,local,remote,share,peer,mediaError,unavailable,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end,stats};
+ /* The whiteboard rides the signalling channel, so both sides see the same board without another
+    service. Drawing still works alone when there is nobody to send to. */
+ const board=useRef<BoardLink>({
+  send:stroke=>link.current?.send({type:'board',from:link.current.me,stroke}),
+  undo:strokeId=>link.current?.send({type:'board-undo',from:link.current.me,strokeId}),
+  clear:()=>link.current?.send({type:'board-clear',from:link.current.me}),
+  subscribe:handler=>{boardHandlers.current.add(handler);return()=>{boardHandlers.current.delete(handler)}},
+ }).current;
+
+ return{status,mediaReady,local,remote,share,peer,mediaError,unavailable,trouble,board,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end,stats};
 }
 export type PeerCall=ReturnType<typeof usePeerCall>;

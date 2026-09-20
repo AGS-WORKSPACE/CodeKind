@@ -3357,3 +3357,13 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 .chat-compose .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; font-size: .78rem; }
 .lesson-notes textarea { width: 100%; min-height: 240px; padding: 12px; border: 1px solid #223730; border-radius: 10px; background: #101d18; color: #e3efe9; font: inherit; font-size: .8rem; line-height: 1.6; resize: vertical; }
 .lesson-notes small { display: block; margin-top: 8px; color: #7e918a; font-size: .7rem; }
+
+/* The whiteboard: pen, eraser, colours, undo and clear — every button does something. */
+.whiteboard-tools { gap: 4px; align-items: center; padding: 6px; }
+.whiteboard-tools button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; color: #43554e; }
+.whiteboard-tools button:hover { background: #eef3ef; }
+.whiteboard-tools button.on { background: #e3f3ea; color: var(--green); }
+.whiteboard-tools .swatch { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #cbd6d0; }
+.whiteboard-tools .swatch.on { box-shadow: 0 0 0 2px var(--green); }
+.whiteboard-tools span { align-self: stretch; margin: 2px 4px; }
+.whiteboard canvas { display: block; cursor: crosshair; }

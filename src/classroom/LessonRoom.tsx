@@ -69,7 +69,7 @@ function Classroom({bookingId,title,parties,people,startMuted,startCamera,access
    {call.unavailable&&<p className="call-unavailable">{call.unavailable} You can still use the whiteboard, chat and notes.</p>}
    <div className="classroom-grid">
     <div className="class-center">
-     {centerMode==='CALL'?<CallStage call={call} me={me} them={them} link={link} onReturn={()=>setCenterMode('WHITEBOARD')}/>:<Whiteboard/>}
+     {centerMode==='CALL'?<CallStage call={call} me={me} them={them} link={link} onReturn={()=>setCenterMode('WHITEBOARD')}/>:<Whiteboard link={call.board}/>}
     </div>
     <aside className="class-right">
      <CallPanel call={call} me={me} them={them} link={link} focused={centerMode==='CALL'} onFocus={()=>setCenterMode('CALL')}/>
