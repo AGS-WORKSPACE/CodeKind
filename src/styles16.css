@@ -3297,3 +3297,10 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 /* With no action beside it, the heading block is also the last child, which was turning the page
    title and its line of explanation into a row. They stack. */
 .workspace-title > div:first-child { display: block; }
+
+/* The joining screen stacked its mark, heading, line and buttons with no room between them. */
+.joining-state { gap: 16px; padding: 24px; }
+.joining-state h1 { margin: 0; }
+.joining-state p { margin: 0; max-width: 40ch; line-height: 1.6; }
+.joining-state .join-spinner { margin: 0; }
+.joining-state > div:last-child { gap: 12px; margin-top: 8px; }
