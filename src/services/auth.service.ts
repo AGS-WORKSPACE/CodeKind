@@ -5,10 +5,10 @@ export type Role='STUDENT'|'TUTOR'|'ADMIN'|'ORGANIZATION';
 export type SessionUser={id:string;firstName:string;lastName:string;email:string;role:Role|null;emailVerified?:boolean;avatar?:string|null;country?:string|null;timezone:string;phone?:string|null;learningGoals?:string|null;orgId?:string|null;orgName?:string|null};
 export type Session={user:SessionUser;workspaces:Role[]};
 export type AccountType='STUDENT'|'TUTOR'|'ORGANIZATION';
-/** organisationName is set when accountType is ORGANIZATION; inviteToken when joining an existing one. */
+/** organisationName is set when accountType is ORGANIZATION. */
 export type AccountInput={firstName:string;lastName:string;country:string;timezone:string;phone?:string;learningGoals?:string};
 export type NotificationPreferences={lessons:boolean;messages:boolean;assignments:boolean;recommendations:boolean};
-type RegisterInput={firstName:string;lastName:string;email:string;password:string;accountType:AccountType;organisationName?:string;inviteToken?:string};
+type RegisterInput={firstName:string;lastName:string;email:string;password:string;accountType:AccountType;organisationName?:string};
 
 /* The backend names workspaces in its own words, so translate at the edge and keep one vocabulary
    inside the app. */

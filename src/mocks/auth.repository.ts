@@ -1,5 +1,4 @@
 import type{AccountType,Role,SessionUser}from'../services/auth.service';
-import{orgRepository}from'./org.repository';
 /* Offline stand-in for /auth/*. Used only when the API is unreachable, so it disappears
    on its own once a backend is running. The session survives a refresh via localStorage. */
 const KEY='pairlore.session';
@@ -24,27 +23,14 @@ export const authRepository={
  accounts:demoAccounts,
  session:read,
  login:async(email:string)=>{const match=demoAccounts.find(a=>a.email.toLowerCase()===email.trim().toLowerCase());const user=match??guestFor(email.trim());write(user);return wait(user)},
- register:async(input:{firstName:string;lastName:string;email:string;accountType:AccountType;organisationName?:string;inviteToken?:string})=>{
+ register:async(input:{firstName:string;lastName:string;email:string;accountType:AccountType;organisationName?:string})=>{
   const firstName=input.firstName||'New';
   const lastName=input.lastName||'Member';
   const base:SessionUser={id:`demo-${Date.now()}`,firstName,lastName,email:input.email,role:'STUDENT',country:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone};
-  // Joining by invitation always produces a trainer inside the inviting organisation,
-  // whatever the signup form said — the token is the authority, not the chooser.
-  if(input.inviteToken){
-   const joined=await orgRepository.accept(input.inviteToken,{name:`${firstName} ${lastName}`,email:input.email});
-   if(joined){
-    const user:SessionUser={...base,role:'TUTOR',orgId:joined.orgId,orgName:joined.orgName};
-    write(user);
-    return wait(user);
-   }
-  }
-  if(input.accountType==='ORGANIZATION'){
-   const org=await orgRepository.create({name:input.organisationName||`${firstName}'s training`,contactEmail:input.email,ownerName:`${firstName} ${lastName}`});
-   const user:SessionUser={...base,role:'ORGANIZATION',orgId:org.id,orgName:org.name};
-   write(user);
-   return wait(user);
-  }
-  const user:SessionUser={...base,role:input.accountType};
+  // Without the API there is no organisation to join, so an organisation signup only names itself.
+  const user:SessionUser=input.accountType==='ORGANIZATION'
+   ?{...base,role:'ORGANIZATION',orgName:input.organisationName||`${firstName}'s training`}
+   :{...base,role:input.accountType};
   write(user);
   return wait(user);
  },

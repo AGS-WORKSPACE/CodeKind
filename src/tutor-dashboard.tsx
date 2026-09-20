@@ -1,10 +1,14 @@
+import{useState}from'react';
 import{Link}from'react-router-dom';
-import{ArrowRight,CalendarDays,Clock,Star,Users,Video}from'lucide-react';
+import{ArrowRight,Building2,CalendarDays,Clock,Star,Users,Video}from'lucide-react';
 import{DashboardShell,StatCard}from'./components';
 import{useAuth}from'./auth';
 import{useLoader}from'./hooks/use-payments';
 import{scheduleService,endsAt,type Booking}from'./services/schedule.service';
 import{tutorService}from'./services/tutor.service';
+import{orgService}from'./services/org.service';
+import{useToast}from'./ui-feedback';
+import{Dialog}from'./lessons-page';
 import{SessionRow}from'./student-dashboard';
 import{STATUS_NOTE}from'./settings-page';
 import{relativeTime}from'./lib/money';
@@ -27,6 +31,34 @@ function summarise(bookings:Booking[],now=new Date()){
 export const initials=(name:string)=>name.split(' ').map(part=>part[0]).join('').slice(0,2).toUpperCase();
 const greeting=(hour=new Date().getHours())=>hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
 
+/** Shown to a trainer: their sessions are paid into their organisation's wallet, not their own. */
+function TrainerBanner(){
+ const toast=useToast();
+ const org=useLoader(()=>orgService.mine(),[]);
+ const[leaving,setLeaving]=useState(false);
+ const[busy,setBusy]=useState(false);
+ if(!org.data||org.data.role!=='trainer')return null;
+
+ const leave=async()=>{
+  setBusy(true);
+  try{await orgService.leave();toast(`You no longer teach under ${org.data?.name}`);await org.reload()}
+  catch(problem){toast(problem instanceof Error?problem.message:'That did not work. Try again.')}
+  finally{setBusy(false);setLeaving(false)}
+ };
+
+ return <div className="trainer-banner">
+  <Building2 size={16}/>
+  <p>You teach under <strong>{org.data.name}</strong>. Sessions you teach are paid into their wallet, not yours.</p>
+  <button type="button" className="text-danger" onClick={()=>setLeaving(true)}>Leave</button>
+  {leaving&&<Dialog title={`Leave ${org.data.name}?`} text="Sessions you have already taught stay with them. Anything you teach afterwards is paid into your own wallet." onClose={()=>setLeaving(false)}>
+   <div className="dialog-actions">
+    <button className="btn ghost" onClick={()=>setLeaving(false)}>Stay</button>
+    <button className="btn danger" disabled={busy} onClick={leave}>{busy?'Leaving…':'Leave the organisation'}</button>
+   </div>
+  </Dialog>}
+ </div>;
+}
+
 export function TutorDashboard(){
  const{user}=useAuth();
  const month=startOfMonth(new Date());
@@ -39,6 +71,7 @@ export function TutorDashboard(){
  const status=profile.data?.status??'draft';
 
  return <DashboardShell role="tutor">
+  <TrainerBanner/>
   <div className="dash-welcome">
    <div><h1>{greeting()}{user?`, ${user.firstName}`:''}</h1><p>{summary.today.length?`You have ${summary.today.length} session${summary.today.length===1?'':'s'} today.`:'No sessions today.'}</p></div>
    <Link className="btn" to="/tutor/calendar"><CalendarDays size={16}/> Open calendar</Link>

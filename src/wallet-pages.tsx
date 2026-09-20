@@ -43,15 +43,13 @@ export function WalletPage({role}:{role:WorkspaceRole}){
  const pageEntries=visible.slice((currentPage-1)*WALLET_PAGE_SIZE,currentPage*WALLET_PAGE_SIZE);
  const missing=CURRENCY_CODES.filter(code=>!held.some(w=>w.currency===code));
 
- if(role==='org')return <DashboardShell role={role}>
-  <div className="dash-welcome"><div><h1>Organisation wallet</h1><p>Organisation money is not here yet. Trainers are paid through their own wallets for now.</p></div></div>
- </DashboardShell>;
-
  return <DashboardShell role={role}>
   <div className="dash-welcome wallet-page-head">
-   <div><h1>Wallet</h1><p>Your balances across every supported currency. Sessions are paid from the wallet that matches the session currency.</p></div>
+   <div><h1>{role==='org'?'Organisation wallet':'Wallet'}</h1><p>{role==='org'
+    ?'What your trainers have earned for the organisation, ready to withdraw. Money arrives here a day after each session.'
+    :'Your balances across every supported currency. Sessions are paid from the wallet that matches the session currency.'}</p></div>
    <div className="wallet-head-actions">
-    <button className="btn" onClick={()=>setDialog('TOPUP')}><Plus size={16}/> Add money</button>
+    {role!=='org'&&<button className="btn" onClick={()=>setDialog('TOPUP')}><Plus size={16}/> Add money</button>}
     <button className="btn ghost" onClick={()=>setDialog('WITHDRAW')}><Landmark size={16}/> Withdraw</button>
    </div>
   </div>
@@ -106,7 +104,7 @@ export function WalletPage({role}:{role:WorkspaceRole}){
     </div></>}
   </div>
 
-  <div className="panel wallet-panel">
+  {role!=='org'&&<div className="panel wallet-panel">
    <h3>Top-ups</h3>
    {!topUps.data?.length?<p className="org-empty">No top-ups yet. Add money to pay for sessions.</p>
     :<table className="org-table"><thead><tr><th>Method</th><th>Amount</th><th>Status</th><th>Started</th></tr></thead><tbody>
@@ -117,7 +115,7 @@ export function WalletPage({role}:{role:WorkspaceRole}){
       <td>{formatDateTime(item.createdAt)}</td>
      </tr>)}
     </tbody></table>}
-  </div>
+  </div>}
 
   <div className="panel wallet-panel">
    <h3>Withdrawals</h3>

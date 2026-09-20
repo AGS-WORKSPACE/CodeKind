@@ -42,6 +42,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Learning paths (epic 12) | ✅ | Admins write paths; learners enrol and tick modules off on a route line; dashboard panel live. |
 | Recurring schedules | ✅ | A tutor proposes days, time and dates; the learner accepts; each session is paid when it opens. |
 | Learning ads (epic 13) | ✅ | Learners post a rate; tutors apply with a time; accepting books it and holds the money. |
+| Organisations (epic 14) | ✅ | Invitations, a real roster, and trainers' sessions paid into the organisation's wallet. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | ✅ | Name, stats, next session, current path, assignments and suggested tutors are all live. |
 
@@ -293,12 +294,24 @@ For a standing arrangement, such as Wednesday to Friday, 8 to 11am, for three mo
 - Accepting books the offered time at the ad's rate, holds the money and fills the ad in one
   transaction; the clash check and a short wallet refuse all of it. Everyone else waiting is declined.
 
-## 14. Organisations
+## 14. Organisations ✅
 
 **UI**
-- Organisation dashboard, trainers and invitations use real members.
+- The organisation overview is a crest, plain figures and a roster drawn as a team sheet: a number
+  each, what they teach, and what they have taught and earned for the organisation.
+- Invitations are envelopes, sealed while they wait. The owner invites by email, copies the link or
+  withdraws it. `/invite/:token` reads publicly and offers to sign in or sign up; signing up from
+  the link joins the roster straight away.
+- A trainer sees a banner on their dashboard saying whose wallet their sessions pay, and can leave.
+- The organisation wallet and earnings pages are live, without the top-up controls a person has.
 
-**Backend:** invitations, trainer membership, and organisation wallets.
+**Backend**
+- `GET /organisations/me`, `/members`, `/invites`; `POST /organisations/invites`;
+  `DELETE /organisations/invites/:id`, `/members/:id`, `/membership`; public `GET /invites/:token`
+  and `POST /invites/:token/accept`.
+- Accepting grants the tutor workspace, and nobody teaches under two organisations at once.
+- Escrow remembers the tutor's organisation, so the payout goes to its wallet; the trainer's own
+  totals leave that money out. The organisation workspace reads its own wallet and ledger.
 
 ## 15. Admin control centre
 

@@ -48,15 +48,13 @@ export function SessionPaymentsPage({role}:{role:WorkspaceRole}){
  const spent=rows.filter(p=>p.status!=='CANCELLED').reduce((sum,p)=>sum+(p.status==='HELD'?p.heldAmount:p.grossAmount),0);
  const currency=rows[0]?.currency??'USD';
 
- if(role==='org')return <DashboardShell role={role}>
-  <div className="dash-welcome"><div><h1>Organisation earnings</h1><p>Sessions taught under an organisation are not billed here yet; each trainer sees their own earnings.</p></div></div>
- </DashboardShell>;
-
  return <DashboardShell role={role}>
   <div className="dash-welcome">
    <div>
-    <h1>{payee?'Earnings ledger':'Session payments'}</h1>
-    <p>{payee
+    <h1>{role==='org'?'Organisation earnings':payee?'Earnings ledger':'Session payments'}</h1>
+    <p>{role==='org'
+     ?'Every session your trainers taught for the organisation, and when each one clears into its wallet.'
+     :payee
      ?'Every session you taught, what it earned, and when it clears. Money stays pending for 24 hours so learners can appeal.'
      :'Every session you paid for. You have 24 hours after a session ends to appeal what you were charged.'}</p>
    </div>
