@@ -11,7 +11,8 @@ const loaded=new Map<ReferenceKind,Promise<ReferenceItem[]>>();
 
 export const referenceService={
  list:(kind:ReferenceKind,offline:()=>ReferenceItem[])=>{
-  const pending=loaded.get(kind)??offlineFallback(()=>api<ReferenceItem[]>(`/reference/${kind}`),async()=>offline());
+  // An empty answer means the list has not been seeded yet, so the built-in set stands in for it.
+  const pending=loaded.get(kind)??offlineFallback(()=>api<ReferenceItem[]>(`/reference/${kind}`).then(items=>items.length?items:offline()),async()=>offline());
   loaded.set(kind,pending);
   return pending;
  },
