@@ -3203,3 +3203,11 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
   .trail-line { grid-template-columns: 1fr; gap: 4px; }
   .trail-line small { grid-column: 1; }
 }
+
+/* The subject filter is typed into rather than scrolled, so it wears the filter panel's styling. */
+.filter-field .search-select input[role=combobox] { width: 100%; min-height: 42px; border: 1px solid #d6e0da; border-radius: 8px; background: #fff; color: var(--ink); padding: 10px 38px 10px 12px; outline: 0; font-size: .875rem; line-height: 1.4; }
+.filter-field .search-select input[role=combobox]:hover { border-color: #9cbcaf; }
+.filter-field .search-select input[role=combobox]:focus { border-color: #398c69; }
+.filter-field .search-select input[role=combobox]::placeholder { color: var(--muted); }
+/* The option list is drawn over the page, so a scrolling panel cannot cut it off. */
+.search-select-list { position: fixed; z-index: 60; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgb(16 40 32 / 12%); }

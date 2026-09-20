@@ -1,4 +1,5 @@
-import{useEffect,useId,useMemo,useRef,useState}from'react';
+import{useCallback,useEffect,useId,useLayoutEffect,useMemo,useRef,useState}from'react';
+import{createPortal}from'react-dom';
 import{Check,ChevronDown}from'lucide-react';
 import{countries,timezoneLabel,timezones}from'./data/locations';
 import{useReference}from'./services/reference.service';
@@ -21,19 +22,42 @@ export type SearchSelectProps={label:string;options:SearchOption[];placeholder?:
  /** Controlled like a native select: pass value + onChange, or just defaultValue. */
  value?:string;defaultValue?:string;onChange?:(value:string)=>void;
  /** Submits the chosen value with a surrounding <form>, as a native select would. */
- name?:string};
+ name?:string;
+ /** Lets a panel style the field as its own, in place of the default form styling. */
+ className?:string};
 
 /* A select you can type into (ARIA combobox pattern). Arrow keys move, Enter picks, Escape closes. */
-export function SearchSelect({label,options,placeholder='Select…',value:controlled,defaultValue='',onChange,name}:SearchSelectProps){
+export function SearchSelect({label,options,placeholder='Select…',value:controlled,defaultValue='',onChange,name,className='search-field'}:SearchSelectProps){
  const id=useId();const listId=`${id}-list`;
  const[uncontrolled,setUncontrolled]=useState(defaultValue);const value=controlled??uncontrolled;
  const[open,setOpen]=useState(false);const[query,setQuery]=useState('');const[active,setActive]=useState(0);
  const listRef=useRef<HTMLUListElement>(null);
+ const fieldRef=useRef<HTMLDivElement>(null);
+ const[box,setBox]=useState({left:0,top:0,width:0,maxHeight:264});
  const selected=options.find(o=>o.value===value);
  const matches=useMemo(()=>search(options,query),[options,query]);
  const show=()=>{setOpen(true);setQuery('');setActive(Math.max(0,options.findIndex(o=>o.value===value)))};
  const close=()=>{setOpen(false);setQuery('')};
  const pick=(option:SearchOption|undefined)=>{if(option){setUncontrolled(option.value);onChange?.(option.value)}close()};
+ /* The list is drawn over the page rather than inside the field, because a filter panel or a
+    dialog that scrolls would otherwise clip it. Its place is measured from the field. */
+ const place=useCallback(()=>{
+  const field=fieldRef.current;
+  if(!field)return;
+  const rect=field.getBoundingClientRect();
+  const below=window.innerHeight-rect.bottom-12;
+  const above=rect.top-12;
+  const height=Math.min(264,Math.max(below,above));
+  const top=below>=height?rect.bottom+4:rect.top-height-4;
+  setBox({left:rect.left,top,width:rect.width,maxHeight:height});
+ },[]);
+ useLayoutEffect(()=>{
+  if(!open)return;
+  place();
+  window.addEventListener('scroll',place,true);
+  window.addEventListener('resize',place);
+  return()=>{window.removeEventListener('scroll',place,true);window.removeEventListener('resize',place)};
+ },[open,place]);
  // Scroll the list only (scrollIntoView would move the page too): centre the choice on open, then keep the active row visible.
  const justOpened=useRef(true);
  useEffect(()=>{const list=listRef.current;if(!open||!list){justOpened.current=true;return}const row=list.children[active] as HTMLElement|undefined;if(!row)return;
@@ -47,16 +71,17 @@ export function SearchSelect({label,options,placeholder='Select…',value:contro
  };
  /* The outer <label> picks up each form's own label styling, like the native selects this replaces;
     aria-labelledby keeps the option list out of the input's accessible name. */
- return <label className="search-field"><span id={`${id}-label`}>{label}</span><div className="search-select">
+ return <label className={className}><span id={`${id}-label`}>{label}</span><div className="search-select" ref={fieldRef}>
   <input id={id} aria-labelledby={`${id}-label`} role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={open&&matches[active]?`${id}-${active}`:undefined} autoComplete="off"
    value={open?query:selected?.label??''} placeholder={open?selected?.label??placeholder:placeholder}
    onFocus={show} onClick={()=>{if(!open)show()}} onBlur={close} onKeyDown={onKeyDown} onChange={e=>{setQuery(e.target.value);setActive(0);setOpen(true)}}/>
   <ChevronDown aria-hidden className="search-select-chevron"/>{name&&<input type="hidden" name={name} value={value}/>}
   {/* mousedown is cancelled so the input keeps focus; click is cancelled so the label doesn't re-open the list. */}
-  {open&&<ul id={listId} role="listbox" aria-label={label} ref={listRef} onMouseDown={e=>e.preventDefault()}>{matches.length?matches.map((option,i)=>
+  {open&&createPortal(<ul id={listId} className="search-select-list" role="listbox" aria-label={label} ref={listRef} onMouseDown={e=>e.preventDefault()}
+   style={{left:box.left,top:box.top,width:box.width,maxHeight:box.maxHeight}}>{matches.length?matches.map((option,i)=>
    <li id={`${id}-${i}`} key={option.value} role="option" aria-selected={option.value===value} className={i===active?'active':undefined}
     onMouseEnter={()=>setActive(i)} onClick={e=>{e.preventDefault();pick(option)}}>{option.label}{option.value===value&&<Check aria-hidden/>}</li>):
-   <li className="search-select-empty" role="presentation">No matches for “{query}”</li>}</ul>}
+   <li className="search-select-empty" role="presentation">No matches for “{query}”</li>}</ul>,document.body)}
  </div></label>;
 }
 
