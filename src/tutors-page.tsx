@@ -4,11 +4,11 @@ import{ExternalLink,Search,ShieldCheck}from'lucide-react';
 import{Filters,SkillBadge,Stars,TutorCard,type TutorFilterState}from'./components';
 import{useLoader}from'./hooks/use-payments';
 import{tutorService}from'./services/tutor.service';
+import{useReference}from'./services/reference.service';
+import{languages as offlineLanguages}from'./data/languages';
 import{ReviewList}from'./reviews-pages';
 
 const EMPTY_FILTERS:TutorFilterState={skill:'',maxPrice:'',experience:'',language:''};
-// Tutors type their languages, so offer the common ones rather than every value ever entered.
-const LANGUAGES=['Arabic','English','French','German','Hausa','Hindi','Igbo','Mandarin','Portuguese','Spanish','Swahili','Yoruba'];
 
 /** Waits until typing pauses, so search does not ask the backend on every key. */
 function useDebounced(value:string,ms=500){
@@ -26,6 +26,8 @@ export function Tutors(){
  const[page,setPage]=useState(1);
  const search=useDebounced(query);
  const skills=useLoader(()=>tutorService.skills(),[]);
+ // The same list tutors pick from, so every choice on offer here matches somebody.
+ const spokenLanguages=useReference('languages',()=>offlineLanguages.map(name=>({code:name.toLowerCase(),label:name})));
 
  useEffect(()=>{setFilters(current=>({...current,skill:routeSkill??''}))},[routeSkill]);
  useEffect(()=>{setPage(1)},[search,filters,sort]);
@@ -56,7 +58,7 @@ export function Tutors(){
    <div className="market-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name, skill or what you want to learn"/></div>
   </div>
   <div className="market-layout">
-   <Filters values={filters} onChange={update} onReset={reset} skills={skillOptions} languages={LANGUAGES}/>
+   <Filters values={filters} onChange={update} onReset={reset} skills={skillOptions} languages={spokenLanguages.map(item=>item.label)}/>
    <div>
     <div className="results-head">
      <span><strong>{pagination?.total??0} tutors</strong> found</span>

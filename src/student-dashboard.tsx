@@ -94,7 +94,7 @@ export function SessionRow({booking,primary=false,teaching=false}:{booking:Booki
 
 /** Booking needs a verified email, so the dashboard says so before a booking fails.
     The backend allows one link a minute; the button counts that minute down. */
-function VerifyEmailNote({email}:{email:string}){
+export function VerifyEmailNote({email,why='to book sessions'}:{email:string;why?:string}){
  const[message,setMessage]=useState('');
  const[sending,setSending]=useState(false);
  const[wait,setWait]=useState(0);
@@ -107,7 +107,7 @@ function VerifyEmailNote({email}:{email:string}){
  };
  return <div className="verify-note">
   <Mail size={16}/>
-  <span>Verify <strong>{email}</strong> to book sessions. {message}</span>
+  <span>Verify <strong>{email}</strong> {why}. {message}</span>
   <button type="button" className="text-link" onClick={resend} disabled={sending||wait>0}>{sending?'Sending…':wait>0?`Resend in ${wait}s`:'Resend link'}</button>
  </div>;
 }

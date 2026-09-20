@@ -2,7 +2,7 @@ import{useEffect,useState}from'react';
 import{Check}from'lucide-react';
 import{DashboardShell}from'./components';
 import{CountrySelect,TimezoneSelect}from'./search-select';
-import{SkillPicker}from'./skill-picker';
+import{LanguagePicker,SkillPicker}from'./pickers';
 import{PageTitle}from'./workspace-pages';
 import{useAuth}from'./auth';
 import{authService,type NotificationPreferences}from'./services/auth.service';
@@ -95,7 +95,7 @@ function TutorProfileForm({tab}:{tab:string}){
   {note}
   <label>Years of experience<input type="number" min={0} value={draft.yearsOfExperience} onChange={e=>set('yearsOfExperience',Number(e.target.value))}/></label>
   <label>Teaching experience<textarea value={draft.teachingExperience} onChange={e=>set('teachingExperience',e.target.value)}/></label>
-  <label>Languages you teach in<input value={draft.languages.join(', ')} onChange={e=>set('languages',e.target.value.split(',').map(x=>x.trimStart()))} placeholder="English, French"/></label>
+  <LanguagePicker label="Languages you teach in" chosen={draft.languages} onToggle={name=>set('languages',draft.languages.includes(name)?draft.languages.filter(x=>x!==name):[...draft.languages,name])}/>
  </SettingsForm>;
  if(tab==='PRICING')return <SettingsForm key={tab} title="Pricing" text="Rates are in US dollars. You are billed per minute taught." onSave={save}>
   {note}

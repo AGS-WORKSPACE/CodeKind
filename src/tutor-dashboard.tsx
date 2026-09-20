@@ -1,15 +1,15 @@
 import{useState}from'react';
 import{Link}from'react-router-dom';
-import{ArrowRight,Building2,CalendarDays,Clock,Star,Users,Video}from'lucide-react';
+import{ArrowRight,Building2,CalendarDays,Check,Clock,Star,Users,Video}from'lucide-react';
 import{DashboardShell,StatCard}from'./components';
 import{useAuth}from'./auth';
 import{useLoader}from'./hooks/use-payments';
 import{scheduleService,endsAt,type Booking}from'./services/schedule.service';
-import{tutorService}from'./services/tutor.service';
+import{tutorService,type TutorProfile}from'./services/tutor.service';
 import{orgService}from'./services/org.service';
 import{useToast}from'./ui-feedback';
 import{Dialog}from'./lessons-page';
-import{SessionRow}from'./student-dashboard';
+import{SessionRow,VerifyEmailNote}from'./student-dashboard';
 import{STATUS_NOTE}from'./settings-page';
 import{relativeTime}from'./lib/money';
 
@@ -59,6 +59,31 @@ function TrainerBanner(){
  </div>;
 }
 
+/* A tutor who left the application half-finished lands here with nothing to do and no idea why
+   learners cannot find them, so the dashboard opens with what is still missing. */
+function GoLive({profile,verified}:{profile:TutorProfile|null;verified:boolean}){
+ const status=profile?.status??'draft';
+ if(status==='approved')return null;
+ const steps:[string,boolean][]=[
+  ['Confirm your email',verified],
+  ['Say who you are',Boolean(profile?.headline&&profile.bio)],
+  ['Choose your subjects',Boolean(profile?.skills.length)],
+  ['Set your rate',Boolean(profile?.hourlyRate)],
+ ];
+ const left=steps.filter(([,done])=>!done).length;
+ const[title,note,action,where]=status==='submitted'
+  ?['Your profile is with our reviewers','We will let you know as soon as it is approved. You can keep changing it until then.','Edit your profile','/tutor/settings']
+  :status==='rejected'
+  ?['Your profile needs changes',STATUS_NOTE.rejected,'Update your profile','/tutor/settings']
+  :['Learners cannot find you yet',`${left} thing${left===1?'':'s'} left before your profile goes for review.`,'Finish your application','/tutor/onboarding'];
+ return <section className="launch-card">
+  <div><h2>{title}</h2><p>{note}</p></div>
+  <Link className="btn" to={where}>{action} <ArrowRight size={16}/></Link>
+  <ol className="launch-steps">{steps.map(([step,done])=>
+   <li key={step} className={done?'done':undefined}><i>{done&&<Check size={12}/>}</i>{step}</li>)}</ol>
+ </section>;
+}
+
 export function TutorDashboard(){
  const{user}=useAuth();
  const month=startOfMonth(new Date());
@@ -72,6 +97,8 @@ export function TutorDashboard(){
 
  return <DashboardShell role="tutor">
   <TrainerBanner/>
+  {user&&user.emailVerified===false&&<VerifyEmailNote email={user.email} why="so we can reach you about your profile"/>}
+  {!profile.loading&&<GoLive profile={profile.data} verified={user?.emailVerified!==false}/>}
   <div className="dash-welcome">
    <div><h1>{greeting()}{user?`, ${user.firstName}`:''}</h1><p>{summary.today.length?`You have ${summary.today.length} session${summary.today.length===1?'':'s'} today.`:'No sessions today.'}</p></div>
    <Link className="btn" to="/tutor/calendar"><CalendarDays size={16}/> Open calendar</Link>
@@ -113,8 +140,11 @@ export function TutorDashboard(){
    <section className="panel">
     <div className="panel-head"><h2>Your profile</h2>{!profile.loading&&<span className={`status ${status}`}>{status.toUpperCase()}</span>}</div>
     {profile.loading?<p className="org-empty">Loading your profile…</p>:<p className="org-empty">{STATUS_NOTE[status]}</p>}
+    {/* A draft profile was never submitted, so the way on is the application, not the editor. */}
     {!profile.loading&&(status==='approved'&&user
      ?<Link className="text-link" to={`/tutor/${user.id}`}>See your public profile <ArrowRight/></Link>
+     :status==='draft'
+     ?<Link className="text-link" to="/tutor/onboarding">Finish your application <ArrowRight/></Link>
      :<Link className="text-link" to="/tutor/settings">Edit your profile <ArrowRight/></Link>)}
    </section>
   </div>

@@ -1,7 +1,7 @@
 import{useEffect,useState}from'react';
 import{api,offlineFallback}from'./api';
 
-export type ReferenceKind='skills'|'countries'|'timezones'|'currencies';
+export type ReferenceKind='skills'|'countries'|'timezones'|'currencies'|'languages';
 export type ReferenceItem={code:string;label:string;category?:string;metadata?:Record<string,unknown>};
 export type AdminReferenceItem=ReferenceItem&{enabled:boolean};
 

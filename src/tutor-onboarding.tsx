@@ -3,10 +3,11 @@ import{useNavigate}from'react-router-dom';
 import{ArrowRight,Check,ShieldCheck}from'lucide-react';
 import{useAuth}from'./auth';
 import{useToast}from'./ui-feedback';
-import{SkillPicker}from'./skill-picker';
+import{LanguagePicker,SkillPicker}from'./pickers';
 import{CountrySelect,TimezoneSelect}from'./search-select';
 import{localTimezone}from'./data/locations';
-import{tutorService}from'./services/tutor.service';
+import{useLoader}from'./hooks/use-payments';
+import{tutorService,type TutorProfile}from'./services/tutor.service';
 import{ApiError}from'./services/api';
 import type{SessionUser}from'./services/auth.service';
 
@@ -18,11 +19,13 @@ const STEPS=[
  ['Rates and links','What you charge, and anything that shows your work.'],
 ];
 
-// The form seeds itself from the session once, so wait for it — on a refresh the session is still loading.
+/* The form seeds itself once, so wait for both the session and any profile already saved — somebody
+   coming back to an unfinished application should not have to type it all again. */
 export function TutorOnboarding(){
  const{user,loading}=useAuth();
- if(loading)return <main className="onboarding"><p className="skill-picker-status">Loading your profile…</p></main>;
- return <OnboardingForm user={user}/>;
+ const saved=useLoader(()=>tutorService.myProfile(),[]);
+ if(loading||saved.loading)return <main className="onboarding"><p className="skill-picker-status">Loading your profile…</p></main>;
+ return <OnboardingForm user={user} saved={saved.data}/>;
 }
 
 /** The steps as a rail: what is done, what is now, and what is left. Finished steps go back. */
@@ -37,16 +40,18 @@ function Rail({step,onGo}:{step:number;onGo:(step:number)=>void}){
  })}</ol>;
 }
 
-function OnboardingForm({user}:{user:SessionUser|null}){
+function OnboardingForm({user,saved}:{user:SessionUser|null;saved:TutorProfile|null}){
  const navigate=useNavigate();
  const toast=useToast();
  const{updateAccount}=useAuth();
  const[step,setStep]=useState(1);
- const[chosen,setChosen]=useState<string[]>([]);
+ const[chosen,setChosen]=useState<string[]>(saved?.skills.map(skill=>skill.code)??[]);
+ const[spoken,setSpoken]=useState<string[]>(saved?.languages.length?saved.languages:['English']);
  const[error,setError]=useState('');
  const[busy,setBusy]=useState(false);
  const[form,setForm]=useState({firstName:user?.firstName??'',lastName:user?.lastName??'',country:user?.country??'',timezone:user?.timezone??localTimezone,
-  headline:'',bio:'',yearsOfExperience:2,teachingExperience:'',githubUrl:'',portfolioUrl:'',linkedinUrl:'',hourlyRate:35,trialRate:20,languages:'English'});
+  headline:saved?.headline??'',bio:saved?.bio??'',yearsOfExperience:saved?.yearsOfExperience||2,teachingExperience:saved?.teachingExperience??'',
+  githubUrl:saved?.githubUrl??'',portfolioUrl:saved?.portfolioUrl??'',linkedinUrl:saved?.linkedinUrl??'',hourlyRate:saved?.hourlyRate||35,trialRate:saved?.trialRate||20});
  const set=(key:keyof typeof form,value:string|number)=>setForm(current=>({...current,[key]:value}));
  const field=(label:string,key:keyof typeof form,type='text')=>
   <label>{label}<input type={type} value={form[key]} onChange={e=>set(key,type==='number'?Number(e.target.value):e.target.value)}/></label>;
@@ -60,7 +65,7 @@ function OnboardingForm({user}:{user:SessionUser|null}){
   try{
    if(user)await updateAccount({firstName:form.firstName,lastName:form.lastName,country:form.country,timezone:form.timezone});
    const saved=await tutorService.saveProfile({headline:form.headline,bio:form.bio,yearsOfExperience:form.yearsOfExperience,
-    teachingExperience:form.teachingExperience,languages:form.languages.split(',').map(x=>x.trim()).filter(Boolean),
+    teachingExperience:form.teachingExperience,languages:spoken,
     hourlyRate:form.hourlyRate,trialRate:form.trialRate,githubUrl:form.githubUrl,portfolioUrl:form.portfolioUrl,linkedinUrl:form.linkedinUrl,
     skills:chosen.map((code,index)=>({code,yearsExperience:form.yearsOfExperience,isPrimary:index===0}))});
    toast(saved.status==='submitted'?'Application sent for review':'Profile saved');
@@ -87,7 +92,8 @@ function OnboardingForm({user}:{user:SessionUser|null}){
    </div>}
    {step===2&&<div className="apply-form">
     <SkillPicker chosen={chosen} onToggle={toggle}/>
-    <div className="two">{field('Years of experience','yearsOfExperience','number')}{field('Languages you teach in','languages')}</div>
+    {field('Years of experience','yearsOfExperience','number')}
+    <LanguagePicker label="Languages you teach in" chosen={spoken} onToggle={name=>setSpoken(current=>current.includes(name)?current.filter(x=>x!==name):[...current,name])}/>
     <label>Teaching experience (optional)<textarea value={form.teachingExperience} onChange={e=>set('teachingExperience',e.target.value)}/></label>
    </div>}
    {step===3&&<div className="apply-form">

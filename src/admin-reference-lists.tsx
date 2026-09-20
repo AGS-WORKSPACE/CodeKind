@@ -10,6 +10,7 @@ const KINDS:[ReferenceKind,string,string][]=[
  ['countries','Countries','Offered wherever someone picks where they live.'],
  ['timezones','Timezones','Offered in profiles; lesson times are shown in them.'],
  ['currencies','Currencies','Only shown currencies can hold wallets and prices.'],
+ ['languages','Languages','The languages tutors can say they teach in.'],
 ];
 type Filter='all'|'shown'|'hidden';
 

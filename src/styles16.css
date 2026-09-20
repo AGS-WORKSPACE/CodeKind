@@ -3250,10 +3250,16 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 .shelf-stacks h4 { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; margin: 0; padding: 14px 0 8px; border-bottom: 1px solid var(--line); background: #fff; color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .shelf-stacks h4 span { margin-left: auto; color: #9aa8a3; font-weight: 500; letter-spacing: 0; }
 .shelf-stacks ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 12px 0 4px; list-style: none; }
-.shelf-stacks button { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: .8rem; }
-.shelf-stacks button:hover { border-color: #9cbcaf; }
-.shelf-stacks button.on { border-color: #3fa278; background: #e9f7ef; color: var(--green); font-weight: 600; }
+.shelf-stacks button, .tag-pick button { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: .8rem; }
+.shelf-stacks button:hover, .tag-pick button:hover { border-color: #9cbcaf; }
+.shelf-stacks button.on, .tag-pick button.on { border-color: #3fa278; background: #e9f7ef; color: var(--green); font-weight: 600; }
 .shelf-empty { padding: 26px 0; color: var(--muted); font-size: .85rem; text-align: center; }
+
+/* Languages go the same way as subjects, but the list is short enough to show whole. */
+.tag-field { margin: 0; padding: 0; border: 0; }
+.tag-field legend { padding: 0 0 7px; font-size: .69rem; font-weight: 700; }
+.tag-box { border: 1px solid var(--line); border-radius: 14px; background: #fff; overflow: hidden; }
+.tag-pick { display: flex; flex-wrap: wrap; gap: 8px; max-height: 172px; overflow-y: auto; padding: 14px; }
 
 @media (max-width: 650px) {
   .apply-rail { gap: 6px; }
@@ -3263,4 +3269,19 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
   .shelf-search { flex: 1 0 100%; }
   .shelf-head small { margin-left: auto; }
   .shelf-stacks { max-height: 60vh; }
+}
+
+/* What is left before a tutor's profile goes live, shown at the top of their dashboard. */
+.launch-card { display: grid; grid-template-columns: 1fr auto; gap: 14px 20px; align-items: center; margin-bottom: 18px; padding: 20px 22px; border: 1px solid var(--line); border-left: 3px solid #3fa278; border-radius: 16px; background: #fff; }
+.launch-card h2 { margin: 0 0 4px; font-size: 1.05rem; }
+.launch-card p { margin: 0; color: var(--muted); font-size: .85rem; }
+.launch-card .btn { flex: none; }
+.launch-steps { display: flex; flex-wrap: wrap; gap: 8px 20px; grid-column: 1 / -1; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--line); list-style: none; }
+.launch-steps li { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; }
+.launch-steps li.done { color: var(--ink); }
+.launch-steps i { display: grid; place-items: center; width: 18px; height: 18px; flex: none; border: 1px solid var(--line); border-radius: 50%; }
+.launch-steps .done i { border-color: #3fa278; background: #e9f7ef; color: var(--green); }
+
+@media (max-width: 650px) {
+  .launch-card { grid-template-columns: 1fr; }
 }
