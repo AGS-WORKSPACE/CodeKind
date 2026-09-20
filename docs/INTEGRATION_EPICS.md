@@ -43,6 +43,7 @@ ones before it unblock it. Endpoints are relative to `/api/v1`.
 | Recurring schedules | ✅ | A tutor proposes days, time and dates; the learner accepts; each session is paid when it opens. |
 | Learning ads (epic 13) | ✅ | Learners post a rate; tutors apply with a time; accepting books it and holds the money. |
 | Organisations (epic 14) | ✅ | Invitations, a real roster, and trainers' sessions paid into the organisation's wallet. |
+| Admin control centre (epic 15) | ✅ | User directory with suspensions, every session, the admin team and an audit trail. |
 | Demo pages retired | ✅ | Home, the admin centre and the workspace pages either read the API or say plainly what is not built. |
 | Student dashboard | ✅ | Name, stats, next session, current path, assignments and suggested tutors are all live. |
 
@@ -313,9 +314,22 @@ For a standing arrangement, such as Wednesday to Friday, 8 to 11am, for three mo
 - Escrow remembers the tutor's organisation, so the payout goes to its wallet; the trainer's own
   totals leave that money out. The organisation workspace reads its own wallet and ledger.
 
-## 15. Admin control centre
+## 15. Admin control centre ✅
 
 **UI**
-- Users, bookings, disputes and platform settings on real data.
+- Users is a register: each account with its workspaces, what it booked, taught, spent and earned,
+  and a rail that turns when it is suspended, with the reason on the row.
+- Bookings is a departure board of every session, searchable and filtered by upcoming, past or
+  cancelled; support can call one off, which refunds it and tells both people.
+- Administrators shows the team with their permissions as chips a super admin can switch.
+- The audit trail lists what administrators have done, newest first.
+- The nav now lists only what is built; the invented global search and quick-create menu are gone,
+  replaced by a search that really finds people.
 
-**Backend:** admin list endpoints.
+**Backend**
+- `GET /admin/people`, `POST /admin/people/:id/suspend|restore` (needs `users.suspend`),
+  `GET /admin/bookings`, `POST /admin/bookings/:id/cancel` (needs `bookings.cancel`),
+  `GET /admin/admins`, `GET /admin/audit`.
+- A suspended account is signed out everywhere, refused at login, and told why.
+- Suspensions, cancellations, permission changes, settings writes, tutor decisions and appeal
+  rulings are all written to the audit trail.

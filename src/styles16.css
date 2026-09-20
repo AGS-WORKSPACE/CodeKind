@@ -3138,3 +3138,68 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
   .squad-figures, .squad-row > .text-danger { grid-column: 2; }
   .squad-figures { flex-wrap: wrap; gap: 16px; }
 }
+
+/* Control centre: the directory reads as a register, sessions as a departure board. */
+.admin-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 16px; }
+.admin-search { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; min-width: 0; padding: 0 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.admin-search svg { color: #8a9a94; flex: none; }
+.admin-search input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 11px 0; background: none; font-size: 13px; }
+.admin-filters select { padding: 10px 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; font-size: 12px; }
+.admin-count { margin-left: auto; font: 500 10px DM Mono, ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #8a9a94; }
+
+.register { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.register-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 18px; align-items: center; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-left: 3px solid #4cae86; border-radius: 10px; }
+.register-row.suspended { border-left-color: #b3542d; background: #fdf7f4; }
+.register-who { display: grid; gap: 3px; min-width: 0; }
+.register-who strong { font-size: 14px; }
+.register-who small { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.register-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.register-tag { padding: 2px 7px; border-radius: 5px; background: #eef4f1; font: 500 9px DM Mono, ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; color: #46615a; }
+.register-tag.warn { background: #fbeee6; color: #9a4424; }
+.register-reason { display: flex; align-items: center; gap: 6px; margin: 5px 0 0; font-size: 11px; color: #9a4424; }
+.register-figures { display: flex; gap: 20px; margin: 0; }
+.register-figures div { display: grid; gap: 2px; }
+.register-figures dt { font: 500 8px DM Mono, ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: #9aa9a3; }
+.register-figures dd { margin: 0; font-size: 12px; font-weight: 700; }
+.register-row > button { flex: none; }
+.register-row > .text-danger { border: 0; background: none; cursor: pointer; font-size: 11px; }
+
+/* A session per line, the time set apart like a departure board. */
+.board { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.board-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.board-row.state-cancelled { opacity: .7; }
+.board-row time { display: grid; gap: 2px; text-align: center; padding: 6px 0; background: #12281f; border-radius: 8px; color: var(--mint); }
+.board-row time b { font: 700 10px DM Mono, ui-monospace, monospace; letter-spacing: .06em; }
+.board-row time span { font: 500 14px DM Mono, ui-monospace, monospace; }
+.board-row.state-cancelled time { background: #6b5147; }
+.board-what { display: grid; gap: 2px; min-width: 0; }
+.board-what strong { font-size: 13px; }
+.board-what small { font-size: 11px; color: var(--muted); }
+.board-reason { color: #9a4424 !important; }
+.board-row > .text-danger { border: 0; background: none; cursor: pointer; font-size: 11px; }
+
+/* Administrators and what each of them may do. */
+.admin-team { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.admin-card { padding: 18px; background: #fff; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; align-content: start; }
+.admin-card header { display: grid; gap: 2px; }
+.admin-card header strong { font-size: 14px; }
+.admin-card header small { font-size: 11px; color: var(--muted); }
+.admin-card-note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11px; color: #2e8763; }
+.permission-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.permission { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 20px; background: #fff; cursor: pointer; font-size: 11px; color: #5f6f69; }
+.permission.on { border-color: #2e8763; background: #eef7f1; color: #21624a; font-weight: 700; }
+.permission:disabled { cursor: default; opacity: .75; }
+
+/* The audit trail: one line each, oldest habits of a log file. */
+.trail { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.trail-line { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.trail-line time { font: 500 10px DM Mono, ui-monospace, monospace; color: #8a9a94; }
+.trail-line i { font-style: normal; font: 500 10px DM Mono, ui-monospace, monospace; color: #46615a; }
+.trail-line small { grid-column: 2; font-size: 11px; color: var(--muted); }
+@media (max-width: 860px) {
+  .register-row, .board-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 10px; }
+  .register-figures { grid-column: 1 / -1; flex-wrap: wrap; gap: 14px; }
+  .board-row time { grid-row: 1; }
+  .trail-line { grid-template-columns: 1fr; gap: 4px; }
+  .trail-line small { grid-column: 1; }
+}
