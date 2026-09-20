@@ -75,9 +75,9 @@ function RejectDialog({tutor,busy,onClose,onConfirm}:{tutor:TutorApplication;bus
   <div className="modal" role="dialog" aria-modal="true" aria-labelledby="reject-title" onMouseDown={e=>e.stopPropagation()}>
    <button type="button" className="modal-close" aria-label="Close" onClick={onClose}><X/></button>
    <h2 id="reject-title">Ask {tutor.firstName} for changes</h2>
-   <p>Their profile leaves search until they save it again. Tell them what to fix; this is sent in their notification.</p>
+   <p>Their profile leaves search until they save it again. What you write is sent to them and kept at the top of their profile editor.</p>
    <textarea className="reject-reason" value={reason} onChange={e=>setReason(e.target.value)} placeholder="For example: add a longer bio and a link to your work." rows={4}/>
-   <div><button type="button" className="btn ghost" onClick={onClose}>Cancel</button><button type="button" className="btn danger" disabled={busy} onClick={()=>onConfirm(reason)}>{busy?'Sending…':'Send'}</button></div>
+   <div><button type="button" className="btn ghost" onClick={onClose}>Cancel</button><button type="button" className="btn danger" disabled={busy||!reason.trim()} onClick={()=>onConfirm(reason)}>{busy?'Sending…':'Send'}</button></div>
   </div>
  </div>;
 }

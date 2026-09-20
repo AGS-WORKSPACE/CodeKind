@@ -2,7 +2,7 @@ import type{Tutor}from'../types';import{paths,skills as featuredSkills,tutors as
 export type Skill={id:string;name:string;category?:string};
 export type TutorStatus='draft'|'submitted'|'approved'|'rejected';
 export type TutorProfileInput={headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;languages:string[];hourlyRate:number;trialRate:number;githubUrl:string;portfolioUrl:string;linkedinUrl:string;skills:{code:string;yearsExperience:number;isPrimary:boolean}[]};
-export type TutorProfile=Omit<TutorProfileInput,'githubUrl'|'portfolioUrl'|'linkedinUrl'|'skills'>&{id:string;firstName:string;lastName:string;country:string|null;timezone:string;currency:string;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;status?:TutorStatus;rating:number;reviewCount:number;skills:{code:string;name:string;yearsExperience:number;isPrimary:boolean}[]};
+export type TutorProfile=Omit<TutorProfileInput,'githubUrl'|'portfolioUrl'|'linkedinUrl'|'skills'>&{id:string;firstName:string;lastName:string;country:string|null;timezone:string;currency:string;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;status?:TutorStatus;reviewNote?:string;rating:number;reviewCount:number;skills:{code:string;name:string;yearsExperience:number;isPrimary:boolean}[]};
 // Offline, the catalogue is every skill the demo data already teaches, across all domains.
 const offlineSkills=():Skill[]=>[...new Set([...featuredSkills.map(s=>s.name),...mockTutors.flatMap(t=>t.skills),...paths.flatMap(p=>p.skills)])].sort((a,b)=>a.localeCompare(b)).map(name=>({id:name.toLowerCase().replace(/[^a-z0-9+#]+/g,'-'),name}));
 const PROFILE_KEY='pairlore.tutor-profile';

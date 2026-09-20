@@ -1,5 +1,5 @@
 import{useEffect,useMemo,useState}from'react';import{Link,useNavigate}from'react-router-dom';import{BookOpen,CalendarDays,Check,ChevronLeft,ChevronRight,Clock,CreditCard,MessageCircle,Plus,Search}from'lucide-react';import{DashboardShell,Stars}from'./components';import{useToast}from'./ui-feedback';
-import{notificationService,type AppNotification,type Inbox,type NotificationKind}from'./services/notification.service';
+import{countUnread,notificationService,type AppNotification,type Inbox,type NotificationKind}from'./services/notification.service';
 import{scheduleService,type Booking}from'./services/schedule.service';
 import{localTimezone,timezoneLabel}from'./data/locations';
 import{relativeTime}from'./lib/money';
@@ -12,7 +12,7 @@ export function NotificationsPage({role}:{role:'student'|'tutor'}){
  const[filter,setFilter]=useState('ALL');
  const toast=useToast();
  const navigate=useNavigate();
- const load=()=>notificationService.inbox().then(setInbox).catch(()=>setInbox({items:[],unread:0}));
+ const load=()=>notificationService.inbox().then(inbox=>{setInbox(inbox);void countUnread()}).catch(()=>setInbox({items:[],unread:0}));
  useEffect(()=>{load()},[]);
  const markAll=()=>notificationService.markAllRead().then(load).then(()=>toast('All notifications marked as read'));
  const open=(n:AppNotification)=>{if(!n.read)notificationService.markRead(n.id).then(load);if(n.link)navigate(n.link)};

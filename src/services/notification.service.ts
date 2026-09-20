@@ -1,3 +1,4 @@
+import{useEffect,useState}from'react';
 import{api,offlineFallback}from'./api';
 
 export type NotificationKind='lesson'|'message'|'assignment'|'payment'|'review'|'approval'|'account';
@@ -22,3 +23,25 @@ export const notificationService={
   ()=>api<unknown>('/notifications/read-all',{method:'POST'}).then(()=>undefined),
   async()=>{demo=demo.map(n=>({...n,read:true}))}),
 };
+
+/* The bell sits on every page while a notification can arrive at any moment, so the unread count is
+   kept in one place: read again on a timer, when the tab comes back, and after the inbox is read. */
+let unread=0;
+const watchers=new Set<(count:number)=>void>();
+export const countUnread=()=>notificationService.inbox()
+ .then(inbox=>{unread=inbox.unread;watchers.forEach(watcher=>watcher(unread))})
+ .catch(()=>{/* leave the last count alone */});
+
+export function useUnread(enabled=true){
+ const[count,setCount]=useState(unread);
+ useEffect(()=>{
+  if(!enabled)return;
+  watchers.add(setCount);
+  void countUnread();
+  const timer=setInterval(countUnread,60_000);
+  const onReturn=()=>{if(!document.hidden)void countUnread()};
+  document.addEventListener('visibilitychange',onReturn);
+  return()=>{watchers.delete(setCount);clearInterval(timer);document.removeEventListener('visibilitychange',onReturn)};
+ },[enabled]);
+ return enabled?count:0;
+}

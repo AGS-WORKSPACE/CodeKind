@@ -74,7 +74,7 @@ function GoLive({profile,verified}:{profile:TutorProfile|null;verified:boolean})
  const[title,note,action,where]=status==='submitted'
   ?['Your profile is with our reviewers','We will let you know as soon as it is approved. You can keep changing it until then.','Edit your profile','/tutor/settings']
   :status==='rejected'
-  ?['Your profile needs changes',STATUS_NOTE.rejected,'Update your profile','/tutor/settings']
+  ?['Your profile needs changes',profile?.reviewNote||STATUS_NOTE.rejected,'Update your profile','/tutor/settings']
   :['Learners cannot find you yet',`${left} thing${left===1?'':'s'} left before your profile goes for review.`,'Finish your application','/tutor/onboarding'];
  return <section className="launch-card">
   <div><h2>{title}</h2><p>{note}</p></div>

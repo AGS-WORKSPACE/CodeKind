@@ -15,13 +15,62 @@ const PROFILE_TABS=['HEADLINE & BIO','SKILLS','EXPERIENCE','PRICING','PORTFOLIO'
 export function SettingsPage({role}:{role:'student'|'tutor'}){
  const tutor=role==='tutor';
  const[tab,setTab]=useState((tutor?TUTOR_TABS:STUDENT_TABS)[0]!);
+ /* Both drafts are held here rather than in the panels, so moving between tabs never throws away
+    what somebody has typed but not saved yet. */
+ const profile=useProfileDraft(tutor);
+ const account=useAccountDraft();
  return <DashboardShell role={role}>
   <PageTitle title={tutor?'Tutor profile editor':'Settings'} text="Keep your profile, preferences, and account security up to date."/>
+  {tutor&&profile.draft&&<ProfileStatus status={profile.status} note={profile.note}/>}
   <div className="settings-layout">
    <nav>{(tutor?TUTOR_TABS:STUDENT_TABS).map(x=><button type="button" className={tab===x?'active':''} onClick={()=>setTab(x)} key={x}>{x}</button>)}</nav>
-   {tab==='NOTIFICATIONS'?<NotificationsForm/>:tab==='SECURITY'?<SecurityForm/>:PROFILE_TABS.includes(tab)?<TutorProfileForm tab={tab}/>:<AccountForm key={tab} tab={tab}/>}
+   {tab==='NOTIFICATIONS'?<NotificationsForm/>:tab==='SECURITY'?<SecurityForm/>:PROFILE_TABS.includes(tab)?<TutorProfileForm tab={tab} profile={profile}/>:<AccountForm tab={tab} account={account}/>}
   </div>
  </DashboardShell>;
+}
+
+/** The account fields, seeded from the session once it has loaded. */
+function useAccountDraft(){
+ const{user,updateAccount}=useAuth();
+ const[form,setForm]=useState({firstName:'',lastName:'',country:'',timezone:'UTC',phone:'',learningGoals:''});
+ const[seeded,setSeeded]=useState(false);
+ useEffect(()=>{
+  if(seeded||!user)return;
+  setForm({firstName:user.firstName,lastName:user.lastName,country:user.country??'',timezone:user.timezone??'UTC',phone:user.phone??'',learningGoals:user.learningGoals??''});
+  setSeeded(true);
+ },[user,seeded]);
+ const set=(key:keyof typeof form)=>(value:string)=>setForm(current=>({...current,[key]:value}));
+ return{form,set,save:async()=>{await updateAccount(form);return'Changes saved'}};
+}
+
+/** The tutor profile draft, loaded once and saved whole from whichever tab is open. */
+function useProfileDraft(tutor:boolean){
+ const[draft,setDraft]=useState<TutorProfileInput|null>(null);
+ const[status,setStatus]=useState<TutorStatus>('draft');
+ const[note,setNote]=useState('');
+ useEffect(()=>{
+  if(!tutor)return;
+  tutorService.myProfile().then(p=>{setDraft(p?toInput(p):EMPTY_PROFILE);setStatus(p?.status??'draft');setNote(p?.reviewNote??'')}).catch(()=>setDraft(EMPTY_PROFILE));
+ },[tutor]);
+ const set=<K extends keyof TutorProfileInput>(key:K,value:TutorProfileInput[K])=>setDraft(current=>current&&{...current,[key]:value});
+ const save=async()=>{
+  const saved=await tutorService.saveProfile({...draft!,languages:draft!.languages.map(x=>x.trim()).filter(Boolean)});
+  const was=status;
+  setStatus(saved.status??status);setNote(saved.reviewNote??'');
+  return saved.status==='submitted'&&was!=='submitted'?'Profile submitted for review':'Profile saved';
+ };
+ return{draft,status,note,set,save};
+}
+type ProfileDraft=ReturnType<typeof useProfileDraft>;
+
+/* Where the profile stands, and what a reviewer asked for in their own words. It sits above the
+   tabs rather than inside one, so it is read wherever the tutor is working. */
+function ProfileStatus({status,note}:{status:TutorStatus;note:string}){
+ return <div className="profile-strength">
+  <div><strong>Profile status</strong><span className={`status ${status}`}>{status.toUpperCase()}</span></div>
+  <small>{STATUS_NOTE[status]}</small>
+  {status==='rejected'&&note&&<p className="review-note">{note}</p>}
+ </div>;
 }
 
 /** One settings panel: shows what saving did, or why it failed. */
@@ -42,11 +91,9 @@ function SettingsForm({title,text,submitLabel='Save changes',onSave,children}:{t
  </form>;
 }
 
-function AccountForm({tab}:{tab:string}){
- const{user,updateAccount}=useAuth();
- const[form,setForm]=useState({firstName:user?.firstName??'',lastName:user?.lastName??'',country:user?.country??'',timezone:user?.timezone??'UTC',phone:user?.phone??'',learningGoals:user?.learningGoals??''});
- const set=(key:keyof typeof form)=>(value:string)=>setForm(current=>({...current,[key]:value}));
- const save=async()=>{await updateAccount(form);return'Changes saved'};
+function AccountForm({tab,account}:{tab:string;account:ReturnType<typeof useAccountDraft>}){
+ const{user}=useAuth();
+ const{form,set,save}=account;
  const initials=`${form.firstName[0]??''}${form.lastName[0]??''}`.toUpperCase();
  if(tab==='ACCOUNT')return <SettingsForm title="Account details" text="How we reach you about your lessons." onSave={save}>
   <label>Email address<input type="email" value={user?.email??''} readOnly/></label>
@@ -72,43 +119,31 @@ export const STATUS_NOTE:Record<TutorStatus,string>={
  rejected:'Your profile needs changes. Save it again to resubmit it for review.',
 };
 
-/** Every profile tab edits one draft, so switching tabs keeps unsaved changes. */
-function TutorProfileForm({tab}:{tab:string}){
- const[draft,setDraft]=useState<TutorProfileInput|null>(null);
- const[status,setStatus]=useState<TutorStatus>('draft');
- useEffect(()=>{
-  tutorService.myProfile().then(p=>{setDraft(p?toInput(p):EMPTY_PROFILE);setStatus(p?.status??'draft')}).catch(()=>setDraft(EMPTY_PROFILE));
- },[]);
+/** Every profile tab edits the one draft held above, so nothing typed is lost between them. */
+function TutorProfileForm({tab,profile}:{tab:string;profile:ProfileDraft}){
+ const{draft,set,save}=profile;
  if(!draft)return <div className="settings-form"><p className="skill-picker-status">Loading your profile…</p></div>;
 
- const set=<K extends keyof TutorProfileInput>(key:K,value:TutorProfileInput[K])=>setDraft({...draft,[key]:value});
- const save=async()=>{const saved=await tutorService.saveProfile({...draft,languages:draft.languages.map(x=>x.trim()).filter(Boolean)});setStatus(saved.status??status);return saved.status==='submitted'&&status!=='submitted'?'Profile submitted for review':'Profile saved'};
  const chosen=new Set(draft.skills.map(s=>s.code));
  const toggle=(code:string)=>set('skills',chosen.has(code)?draft.skills.filter(s=>s.code!==code):[...draft.skills,{code,yearsExperience:draft.yearsOfExperience,isPrimary:draft.skills.length===0}]);
- const note=<div className="profile-strength"><div><strong>Profile status</strong><span className={`status ${status}`}>{status.toUpperCase()}</span></div><small>{STATUS_NOTE[status]}</small></div>;
 
  if(tab==='SKILLS')return <SettingsForm key={tab} title="Skills" text="The first skill you pick is shown as your speciality." onSave={save}>
-  {note}
   <SkillPicker chosen={draft.skills.map(s=>s.code)} onToggle={toggle}/>
  </SettingsForm>;
  if(tab==='EXPERIENCE')return <SettingsForm key={tab} title="Experience" text="Tell learners what you have built and taught." onSave={save}>
-  {note}
   <label>Years of experience<input type="number" min={0} value={draft.yearsOfExperience} onChange={e=>set('yearsOfExperience',Number(e.target.value))}/></label>
   <label>Teaching experience<textarea value={draft.teachingExperience} onChange={e=>set('teachingExperience',e.target.value)}/></label>
   <LanguagePicker label="Languages you teach in" chosen={draft.languages} onToggle={name=>set('languages',draft.languages.includes(name)?draft.languages.filter(x=>x!==name):[...draft.languages,name])}/>
  </SettingsForm>;
  if(tab==='PRICING')return <SettingsForm key={tab} title="Pricing" text="Rates are in US dollars. You are billed per minute taught." onSave={save}>
-  {note}
   <div className="two"><label>Hourly rate<input type="number" min={0} step="0.01" value={draft.hourlyRate} onChange={e=>set('hourlyRate',Number(e.target.value))}/></label><label>Trial rate<input type="number" min={0} step="0.01" value={draft.trialRate} onChange={e=>set('trialRate',Number(e.target.value))}/></label></div>
  </SettingsForm>;
  if(tab==='PORTFOLIO')return <SettingsForm key={tab} title="Portfolio" text="Links that show your work." onSave={save}>
-  {note}
   <label>GitHub<input type="url" value={draft.githubUrl} onChange={e=>set('githubUrl',e.target.value)} placeholder="https://github.com/you"/></label>
   <label>Portfolio<input type="url" value={draft.portfolioUrl} onChange={e=>set('portfolioUrl',e.target.value)}/></label>
   <label>LinkedIn<input type="url" value={draft.linkedinUrl} onChange={e=>set('linkedinUrl',e.target.value)}/></label>
  </SettingsForm>;
  return <SettingsForm key={tab} title="Headline & bio" text="The first thing learners read about you." onSave={save}>
-  {note}
   <label>Professional headline<input value={draft.headline} onChange={e=>set('headline',e.target.value)} placeholder="Python & data science tutor"/></label>
   <label>Biography<textarea value={draft.bio} onChange={e=>set('bio',e.target.value)}/></label>
  </SettingsForm>;
