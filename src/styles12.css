@@ -234,7 +234,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 }
 .settings-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:0 11px;color:var(--muted)}
 .settings-form .settings-search input{border:0;padding:11px 0;flex:1;outline:none}
-.settings-form .skill-picker{padding:14px;max-height:340px;overflow:auto}
+
 .profile-strength .status{font-size:8px}
 .status.draft{background:#eef1ef;color:#5b6b65}
 .status.approved{background:#e5f6eb;color:#287854}

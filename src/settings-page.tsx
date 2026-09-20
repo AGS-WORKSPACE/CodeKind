@@ -1,11 +1,12 @@
 import{useEffect,useState}from'react';
-import{Check,Search}from'lucide-react';
+import{Check}from'lucide-react';
 import{DashboardShell}from'./components';
 import{CountrySelect,TimezoneSelect}from'./search-select';
+import{SkillPicker}from'./skill-picker';
 import{PageTitle}from'./workspace-pages';
 import{useAuth}from'./auth';
 import{authService,type NotificationPreferences}from'./services/auth.service';
-import{tutorService,type Skill,type TutorProfile,type TutorProfileInput,type TutorStatus}from'./services/tutor.service';
+import{tutorService,type TutorProfile,type TutorProfileInput,type TutorStatus}from'./services/tutor.service';
 
 const STUDENT_TABS=['PROFILE','ACCOUNT','NOTIFICATIONS','SECURITY'];
 const TUTOR_TABS=['PERSONAL','HEADLINE & BIO','SKILLS','EXPERIENCE','PRICING','PORTFOLIO','NOTIFICATIONS','SECURITY'];
@@ -75,11 +76,8 @@ export const STATUS_NOTE:Record<TutorStatus,string>={
 function TutorProfileForm({tab}:{tab:string}){
  const[draft,setDraft]=useState<TutorProfileInput|null>(null);
  const[status,setStatus]=useState<TutorStatus>('draft');
- const[skills,setSkills]=useState<Skill[]>([]);
- const[query,setQuery]=useState('');
  useEffect(()=>{
   tutorService.myProfile().then(p=>{setDraft(p?toInput(p):EMPTY_PROFILE);setStatus(p?.status??'draft')}).catch(()=>setDraft(EMPTY_PROFILE));
-  tutorService.skills().then(setSkills).catch(()=>setSkills([]));
  },[]);
  if(!draft)return <div className="settings-form"><p className="skill-picker-status">Loading your profile…</p></div>;
 
@@ -87,13 +85,11 @@ function TutorProfileForm({tab}:{tab:string}){
  const save=async()=>{const saved=await tutorService.saveProfile({...draft,languages:draft.languages.map(x=>x.trim()).filter(Boolean)});setStatus(saved.status??status);return saved.status==='submitted'&&status!=='submitted'?'Profile submitted for review':'Profile saved'};
  const chosen=new Set(draft.skills.map(s=>s.code));
  const toggle=(code:string)=>set('skills',chosen.has(code)?draft.skills.filter(s=>s.code!==code):[...draft.skills,{code,yearsExperience:draft.yearsOfExperience,isPrimary:draft.skills.length===0}]);
- const matches=skills.filter(s=>chosen.has(s.id)||s.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0,60);
  const note=<div className="profile-strength"><div><strong>Profile status</strong><span className={`status ${status}`}>{status.toUpperCase()}</span></div><small>{STATUS_NOTE[status]}</small></div>;
 
  if(tab==='SKILLS')return <SettingsForm key={tab} title="Skills" text="The first skill you pick is shown as your speciality." onSave={save}>
   {note}
-  <label>Find a skill<span className="settings-search"><Search size={14}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search skills"/></span></label>
-  <div className="skill-picker">{matches.map(s=><button type="button" className={chosen.has(s.id)?'selected':''} onClick={()=>toggle(s.id)} key={s.id}>{chosen.has(s.id)&&<Check/>}{s.name}</button>)}</div>
+  <SkillPicker chosen={draft.skills.map(s=>s.code)} onToggle={toggle}/>
  </SettingsForm>;
  if(tab==='EXPERIENCE')return <SettingsForm key={tab} title="Experience" text="Tell learners what you have built and taught." onSave={save}>
   {note}

@@ -1,5 +1,5 @@
 import type{Tutor}from'../types';import{paths,skills as featuredSkills,tutors as mockTutors}from'../data/mock';import{countries}from'../data/locations';import{ApiError,api,offlineFallback}from'./api';
-export type Skill={id:string;name:string};
+export type Skill={id:string;name:string;category?:string};
 export type TutorStatus='draft'|'submitted'|'approved'|'rejected';
 export type TutorProfileInput={headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;languages:string[];hourlyRate:number;trialRate:number;githubUrl:string;portfolioUrl:string;linkedinUrl:string;skills:{code:string;yearsExperience:number;isPrimary:boolean}[]};
 export type TutorProfile=Omit<TutorProfileInput,'githubUrl'|'portfolioUrl'|'linkedinUrl'|'skills'>&{id:string;firstName:string;lastName:string;country:string|null;timezone:string;currency:string;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;status?:TutorStatus;rating:number;reviewCount:number;skills:{code:string;name:string;yearsExperience:number;isPrimary:boolean}[]};
@@ -32,7 +32,7 @@ export const tutorService={
  detail:(id:string)=>offlineFallback(
   ()=>api<{tutor:TutorProfile}>(`/tutors/${id}`).then(r=>adapt(r.tutor)),
   async()=>mockTutors.find(t=>t.id===id)??mockTutors[0]!),
- skills:()=>offlineFallback(()=>api<{code:string;label:string}[]>('/reference/skills').then(items=>items.map(item=>({id:item.code,name:item.label}))),async()=>offlineSkills()),
+ skills:()=>offlineFallback(()=>api<{code:string;label:string;category?:string}[]>('/reference/skills').then(items=>items.map(item=>({id:item.code,name:item.label,category:item.category}))),async()=>offlineSkills()),
  /** The signed-in tutor's own profile, or null before they have saved one. */
  myProfile:()=>offlineFallback(()=>api<{tutor:TutorProfile}>('/tutor/profile').then(r=>r.tutor).catch(e=>{if(e instanceof ApiError&&e.status===404)return null;throw e}),async()=>readSaved()),
  /** Saving a complete profile submits it for review; an approved one stays live. */

@@ -6,7 +6,7 @@ import{BecomeTutor,Home,NotFound}from'./pages';
 import{LearningPathDetail,LearningPaths}from'./paths-pages';
 import{Messages}from'./messages-page';
 import{AssignmentsPage}from'./assignments-page';
-import{AuthPage,TutorOnboarding}from'./connected-pages';import{TutorProfile,Tutors}from'./tutors-page';import{WorkspacePicker}from'./workspace-picker';
+import{AuthPage}from'./connected-pages';import{TutorOnboarding}from'./tutor-onboarding';import{TutorProfile,Tutors}from'./tutors-page';import{WorkspacePicker}from'./workspace-picker';
 import{FrontendBooking}from'./booking-frontend';
 import{AdminControlCentre}from'./admin-control';
 import{NotificationsPage,StudentTutors,TutorCalendar}from'./workspace-pages';import{LessonsPage}from'./lessons-page';import{TutorDashboard}from'./tutor-dashboard';import{TutorStudents}from'./tutor-students';import{SettingsPage}from'./settings-page';import{StudentDashboard}from'./student-dashboard';
