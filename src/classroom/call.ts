@@ -8,14 +8,12 @@ import type{Booking}from'../services/schedule.service';
 export type CallSide='tutor'|'learner';
 export type CallParty={name:string;role:'Tutor'|'Learner'};
 
-/** Your side comes from the booking. `?as=tutor|learner` overrides it, so one person can demo
-    both ends of a call from two tabs of the same browser. */
-export function callParties(booking:Booking|null,userId:string|undefined,as:string|null){
- const override:CallSide|null=as==='tutor'||as==='learner'?as:null;
- const side:CallSide=override??(booking&&userId===booking.tutor.id?'tutor':'learner');
+/** Which side of the booking you are on. Nobody can join as the other person. */
+export function callParties(booking:Booking|null,userId:string|undefined){
+ const side:CallSide=booking&&userId===booking.tutor.id?'tutor':'learner';
  const tutor:CallParty={name:booking?.tutor.name??'Your tutor',role:'Tutor'};
  const learner:CallParty={name:booking?.learner.name??'Your learner',role:'Learner'};
- return{side,otherSide:(side==='tutor'?'learner':'tutor') as CallSide,demoTab:Boolean(override),me:side==='tutor'?tutor:learner,them:side==='tutor'?learner:tutor};
+ return{side,otherSide:(side==='tutor'?'learner':'tutor') as CallSide,me:side==='tutor'?tutor:learner,them:side==='tutor'?learner:tutor};
 }
 export const initials=(name:string)=>name.split(' ').map(part=>part[0]).join('').slice(0,2).toUpperCase();
 export const firstName=(name:string)=>name.split(' ')[0]??name;
@@ -41,15 +39,6 @@ export type Signal=
  |{type:'bye';from:string};
 
 export type SignalingChannel={send:(signal:Signal)=>void;subscribe:(handler:(signal:Signal)=>void)=>()=>void;close:()=>void};
-
-/* Tabs of one browser, over BroadcastChannel: enough to demo a call on one computer with no server.
-   Calls between devices use socketSignaling in connect.ts, which relays these same messages. */
-export function browserSignaling(room:string):SignalingChannel{
- const channel=new BroadcastChannel(`pairlore-call:${room}`);
- const handlers=new Set<(signal:Signal)=>void>();
- channel.onmessage=event=>handlers.forEach(handler=>handler(event.data as Signal));
- return{send:signal=>channel.postMessage(signal),subscribe:handler=>{handlers.add(handler);return()=>{handlers.delete(handler)}},close:()=>channel.close()};
-}
 
 // ---------------------------------------------------------------------------
 // The call
@@ -80,7 +69,7 @@ const mediaProblem=(error:unknown)=>error instanceof DOMException&&error.name===
  * start, and tracks are swapped into them (replaceTrack, no renegotiation) whenever they arrive —
  * so a slow permission prompt only delays your picture, never the connection.
  */
-export function usePeerCall({room,name,startMuted=false,startCamera=true,signaling=browserSignaling,iceServers=NO_SERVERS}:{room:string;name:string;startMuted?:boolean;startCamera?:boolean;signaling?:(room:string)=>SignalingChannel;iceServers?:RTCIceServer[]}){
+export function usePeerCall({room,name,startMuted=false,startCamera=true,signaling,iceServers=NO_SERVERS}:{room:string;name:string;startMuted?:boolean;startCamera?:boolean;signaling?:(room:string)=>SignalingChannel;iceServers?:RTCIceServer[]}){
  const[status,setStatus]=useState<CallStatus>('WAITING');
  const[mediaReady,setMediaReady]=useState(false);
  const[local,setLocal]=useState<MediaStream|null>(null);
@@ -95,7 +84,12 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
  const nameRef=useRef(name);nameRef.current=name;
  const link=useRef<{send:(signal:Signal)=>void;announce:()=>void;setScreen:(track:MediaStreamTrack|null)=>void;stream:MediaStream|null;me:string;connection:()=>RTCPeerConnection|null}|null>(null);
 
+ /* Without a signalling service the two browsers cannot find each other, so the room says so
+    rather than sitting on "waiting" forever. */
+ const unavailable=signaling?null:'Live video is not set up on this server yet.';
+
  useEffect(()=>{
+  if(!signaling)return;
   const me=crypto.randomUUID(); // per mount, so a reloaded tab counts as a new arrival
   const channel=signaling(room);
   let disposed=false;
@@ -210,6 +204,6 @@ export function usePeerCall({room,name,startMuted=false,startCamera=true,signali
 
  // Connection statistics for telemetry; null while no peer is connected.
  const stats=useCallback(async()=>link.current?.connection()?.getStats()??null,[]);
- return{status,mediaReady,local,remote,share,peer,mediaError,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end,stats};
+ return{status,mediaReady,local,remote,share,peer,mediaError,unavailable,muted,camera,sharing:share!==null,ended,toggleMute,toggleCamera,toggleShare,end,stats};
 }
 export type PeerCall=ReturnType<typeof usePeerCall>;

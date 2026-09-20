@@ -17,9 +17,12 @@ export async function callAccess(sessionId:string):Promise<CallAccess|null>{
  catch(problem){if(problem instanceof ApiError&&problem.status!==404)throw problem;return null}
 }
 
+export type LinkState={open:boolean;reason?:string};
+
 /** Signals through the signaling service. A dropped socket reconnects with a fresh ticket, and sends
-    the hello again so the other side knows this tab is still here. Other messages wait for the socket. */
-export function socketSignaling(sessionId:string,first:CallAccess):SignalingChannel{
+    the hello again so the other side knows this tab is still here. Other messages wait for the socket.
+    onState reports whether the socket is up, so the room can say when the two sides cannot meet. */
+export function socketSignaling(sessionId:string,first:CallAccess,onState?:(state:LinkState)=>void):SignalingChannel{
  const handlers=new Set<(signal:Signal)=>void>();
  const pending:string[]=[];
  let socket:WebSocket|null=null;
@@ -32,6 +35,7 @@ export function socketSignaling(sessionId:string,first:CallAccess):SignalingChan
   socket=ws;
   ws.onopen=()=>{
    attempt=0;
+   onState?.({open:true});
    if(hello)ws.send(hello);
    pending.splice(0).forEach(message=>ws.send(message));
   };
@@ -39,7 +43,11 @@ export function socketSignaling(sessionId:string,first:CallAccess):SignalingChan
    try{const signal=JSON.parse(event.data) as Signal;handlers.forEach(handler=>handler(signal))}
    catch{/* not a signal */}
   };
-  ws.onclose=()=>{if(!closed&&socket===ws)retry()};
+  ws.onclose=event=>{
+   if(closed||socket!==ws)return;
+   onState?.({open:false,reason:event.reason||(event.code===1006?'the call service could not be reached':`the call service closed the connection (${event.code})`)});
+   retry();
+  };
  };
 
  // Stops only when the backend refuses a new ticket, such as after the session has ended.
@@ -48,8 +56,8 @@ export function socketSignaling(sessionId:string,first:CallAccess):SignalingChan
   setTimeout(()=>{
    if(closed)return;
    callAccess(sessionId)
-    .then(access=>{if(closed)return;if(access?.signalUrl)connect(access);else retry()})
-    .catch(problem=>{if(!(problem instanceof ApiError))retry()});
+    .then(access=>{if(closed)return;if(access?.signalUrl)connect(access);else{onState?.({open:false,reason:'this server has no call service configured'});retry()}})
+    .catch(problem=>{if(problem instanceof ApiError)onState?.({open:false,reason:problem.message});else retry()});
   },wait);
  };
 

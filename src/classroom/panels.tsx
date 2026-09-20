@@ -1,10 +1,84 @@
-import{useState}from'react';import{firstName,initials,usePeople}from'./call';import{BookOpen,Check,ChevronDown,ChevronRight,Clipboard,Copy,File,FileCode,FilePlus,Folder,FolderOpen,FolderPlus,Link as LinkIcon,MessageCircle,Paperclip,Plus,Reply,Save,Trash2,Users}from'lucide-react';import type{ClassroomMessage,ClassroomParticipant,EditorFile,Exercise,LessonPlanItem}from'../types/classroom';
-export function FileExplorer({files,activeId,onSelect,onDelete}:{files:EditorFile[];activeId:string;onSelect:(id:string)=>void;onDelete:(id:string)=>void}){const[open,setOpen]=useState<Record<string,boolean>>({src:true,exercises:true});return <aside className="class-left"><div className="panel-label"><span>EXPLORER</span><div><button aria-label="New file"><FilePlus/></button><button aria-label="New folder"><FolderPlus/></button></div></div><button className="tree-folder" onClick={()=>setOpen({...open,src:!open.src})}>{open.src?<ChevronDown/>:<ChevronRight/>}{open.src?<FolderOpen/>:<Folder/>} src</button>{open.src&&<div className="tree-level">{files.filter(f=>!f.path.includes('exercises')).map(f=><div className={activeId===f.id?'tree-file active':'tree-file'} key={f.id}><button onClick={()=>onSelect(f.id)}><FileCode/>{f.name}{f.dirty&&<i/>}</button><button aria-label={`Delete ${f.name}`} onClick={()=>onDelete(f.id)}><Trash2/></button></div>)}<button className="tree-folder" onClick={()=>setOpen({...open,exercises:!open.exercises})}>{open.exercises?<ChevronDown/>:<ChevronRight/>}<Folder/> exercises</button>{open.exercises&&files.filter(f=>f.path.includes('exercises')).map(f=><div className={activeId===f.id?'tree-file active':'tree-file'} key={f.id}><button onClick={()=>onSelect(f.id)}><FileCode/>{f.name}</button></div>)}</div>}<div className="left-section"><div className="panel-label"><span>LESSON RESOURCES</span><button aria-label="Add resource"><Plus/></button></div>{[['MDN: Array.filter()','DOC'],['Starter repository','GIT'],['Array methods cheatsheet','PDF']].map(x=><button className="resource-mini" key={x[0]}><File/><span>{x[0]}<small>{x[1]}</small></span></button>)}</div><ParticipantList/></aside>}
-export function ClassroomChat(){const{tutor}=usePeople();const tutorFirst=firstName(tutor.name);const messages:ClassroomMessage[]=[{id:'1',author:'System',type:'SYSTEM',body:`${tutorFirst} joined the lesson.`,timestamp:'3:00 PM'},{id:'2',author:tutorFirst,avatar:initials(tutor.name),type:'TEXT',body:'Let’s focus on how filter() decides which items to keep.',timestamp:'3:08 PM'},{id:'3',author:tutorFirst,avatar:initials(tutor.name),type:'CODE',body:'users.filter(user => user.active)',language:'JavaScript',timestamp:'3:09 PM'},{id:'4',author:'System',type:'SYSTEM',body:'15 minutes remaining.',timestamp:'3:35 PM'}];return <div className="class-chat"><div className="chat-scroll">{messages.map(m=>m.type==='SYSTEM'?<p className="system-msg" key={m.id}>{m.body}</p>:<article key={m.id}><div className="mini-avatar">{m.avatar}</div><div><header><strong>{m.author}</strong><span>{m.timestamp}</span><button aria-label="Reply"><Reply/></button></header>{m.type==='CODE'?<div className="chat-code"><span>{m.language}<button aria-label="Copy code"><Copy/></button></span><code>{m.body}</code></div>:<p>{m.body}</p>}</div></article>)}</div><form className="class-composer" onSubmit={e=>e.preventDefault()}><textarea placeholder="Message the lesson…"/><div><button aria-label="Attach file"><Paperclip/></button><button aria-label="Insert code"><FileCode/></button><button aria-label="Add emoji">☺</button><button className="send-msg">Send</button></div></form></div>}
-export function LessonNotes(){const[saving,setSaving]=useState(false);const[notes,setNotes]=useState('filter() creates a new array and never changes the original.\nThe callback should return true for items we want to keep.');const update=(value:string)=>{setNotes(value);setSaving(true);setTimeout(()=>setSaving(false),650)};return <div className="lesson-notes"><div className="autosave"><Save/>{saving?'Saving…':'Saved'}</div><NoteSection title="Lesson goals"><label><input type="checkbox" defaultChecked/> Understand JavaScript array methods</label><label><input type="checkbox" defaultChecked/> Learn map(), filter() and reduce()</label><label><input type="checkbox"/> Complete practice exercise</label></NoteSection><NoteSection title="Key concepts"><div className="concept-tags"><span>Pure functions</span><span>Callbacks</span><span>Immutability</span></div></NoteSection><NoteSection title="Shared notes"><textarea value={notes} onChange={e=>update(e.target.value)}/></NoteSection><NoteSection title="Homework"><textarea defaultValue="Complete the user filtering exercise and add two edge-case tests."/></NoteSection></div>}
-function NoteSection({title,children}:{title:string;children:React.ReactNode}){return <section><h3>{title}</h3>{children}</section>}
-export function LessonPlan(){const items:LessonPlanItem[]=[{id:'1',title:'Introduction',status:'COMPLETED'},{id:'2',title:'map()',status:'COMPLETED'},{id:'3',title:'filter()',status:'CURRENT'},{id:'4',title:'reduce()',status:'UPCOMING'},{id:'5',title:'Practice exercise',status:'UPCOMING'}];return <div className="lesson-plan"><div><strong>JavaScript Array Methods</strong><span>45% complete</span></div><div className="plan-progress"><i/></div>{items.map((item,i)=><p className={item.status.toLowerCase()} key={item.id}><b>{item.status==='COMPLETED'?<Check/>:i+1}</b><span>{item.title}<small>{item.status.toLowerCase()}</small></span></p>)}</div>}
-export function ExercisePanel({exercise,onRun}:{exercise:Exercise;onRun:()=>void}){const[submitted,setSubmitted]=useState(false);const[hint,setHint]=useState(false);return <div className="exercise-panel"><header><div><span>{exercise.difficulty}</span><small>ARRAYS · EXERCISE</small></div><h2>{exercise.title}</h2></header><section><h3>Instructions</h3><p>{exercise.instructions}</p><h3>Expected output</h3><code>{exercise.expectedOutput}</code><button className="hint" onClick={()=>setHint(!hint)}>💡 {hint?exercise.hint:'Show hint'}</button></section><div className="test-results"><h3>Tests {submitted&&<span>3 / 4 passed</span>}</h3>{submitted?exercise.tests.map(t=><div className={t.passed?'passed':'failed'} key={t.id}><b>{t.passed?'✓':'×'}</b><span>{t.name}{!t.passed&&<small>Expected: {t.expected} · Received: {t.received}</small>}</span></div>):<p>Run or submit your solution to see test results.</p>}</div><footer><button className="btn ghost" onClick={onRun}>Run tests</button><button className="btn" onClick={()=>setSubmitted(true)}>Submit solution</button></footer></div>}
-export function ResourcesPanel(){return <div className="resources-panel"><button className="add-resource"><Plus/> Add resource</button>{[['MDN Array.prototype.filter()','Documentation','https://developer.mozilla.org'],['pairlore/array-methods','GitHub repository','https://github.com'],['Array methods cheatsheet','PDF · 1.2 MB','#'],['Functional JavaScript','Article · 8 min','#']].map(x=><article key={x[0]}><div><LinkIcon/></div><span><strong>{x[0]}</strong><small>{x[1]}</small></span><button aria-label="Copy link"><Clipboard/></button></article>)}</div>}
+import{useEffect,useRef,useState}from'react';
+import{Save,Send}from'lucide-react';
+import{firstName,initials,usePeople}from'./call';
+import{messagesService,type Message}from'../services/messages.service';
+
+/* The lesson chat is the same thread as the messages page, so anything said here is still there
+   afterwards. It is polled while the room is open, which is enough for a two-person lesson. */
+export function ClassroomChat({otherId,myId}:{otherId:string|null;myId:string|null}){
+ const{them}=usePeople();
+ const[conversationId,setConversationId]=useState<string|null>(null);
+ const[messages,setMessages]=useState<Message[]>([]);
+ const[draft,setDraft]=useState('');
+ const[error,setError]=useState('');
+ const foot=useRef<HTMLDivElement>(null);
+
+ useEffect(()=>{
+  if(!otherId)return;
+  let live=true;
+  messagesService.open(otherId)
+   .then(conversation=>{if(live)setConversationId(conversation.id)})
+   .catch(problem=>{if(live)setError(problem instanceof Error?problem.message:'Chat is not available in this session.')});
+  return()=>{live=false};
+ },[otherId]);
+
+ useEffect(()=>{
+  if(!conversationId)return;
+  let live=true;
+  const read=()=>messagesService.messages(conversationId).then(page=>{if(live)setMessages(page.items)}).catch(()=>{/* the last page stays */});
+  void read();
+  const timer=setInterval(read,4000);
+  return()=>{live=false;clearInterval(timer)};
+ },[conversationId]);
+
+ useEffect(()=>{foot.current?.scrollIntoView({block:'end'})},[messages.length]);
+
+ const send=async(event:React.FormEvent)=>{
+  event.preventDefault();
+  const body=draft.trim();
+  if(!body||!conversationId)return;
+  setDraft('');
+  try{const sent=await messagesService.send(conversationId,body);setMessages(current=>[...current,sent])}
+  catch(problem){setError(problem instanceof Error?problem.message:'That message did not send.');setDraft(body)}
+ };
+
+ return <div className="class-chat">
+  {error&&<p className="chat-error">{error}</p>}
+  <div className="chat-log">
+   {!messages.length&&<p className="chat-empty">No messages yet. Anything you write here stays in your thread with {firstName(them.name)}.</p>}
+   {messages.map(message=>{
+    const mine=message.senderId===myId;
+    return <article className={mine?'mine':undefined} key={message.id}>
+     {!mine&&<span className="chat-avatar">{initials(them.name)}</span>}
+     <p>{message.body}</p>
+    </article>;
+   })}
+   <div ref={foot}/>
+  </div>
+  <form className="chat-compose" onSubmit={send}>
+   <input value={draft} onChange={event=>setDraft(event.target.value)} placeholder={`Message ${firstName(them.name)}…`} aria-label="Message"/>
+   <button className="btn" disabled={!draft.trim()||!conversationId}><Send size={15}/> Send</button>
+  </form>
+ </div>;
+}
+
+/* Notes are yours alone and stay on this device, so nothing is promised that the backend does not
+   keep. They are kept per lesson. */
+export function LessonNotes({bookingId}:{bookingId:string}){
+ const key=`pairlore.lesson-notes.${bookingId}`;
+ const[notes,setNotes]=useState(()=>{try{return localStorage.getItem(key)??''}catch{return''}});
+ const[saved,setSaved]=useState(true);
+ useEffect(()=>{
+  setSaved(false);
+  const timer=setTimeout(()=>{try{localStorage.setItem(key,notes)}catch{/* storage blocked */}setSaved(true)},500);
+  return()=>clearTimeout(timer);
+ },[notes,key]);
+ return <div className="lesson-notes">
+  <div className="autosave"><Save/>{saved?'Saved on this device':'Saving…'}</div>
+  <textarea value={notes} onChange={event=>setNotes(event.target.value)} placeholder="What you want to remember from this lesson."/>
+  <small>Only you can see these.</small>
+ </div>;
+}
+
 /** Who is in the room: you, and the other person once they have joined the call. */
 function ParticipantList(){const{me,them,connected}=usePeople();return <div className="left-section participants"><div className="panel-label"><span>PARTICIPANTS · {connected?2:1}</span></div><p><i className="presence green"/><span>{me.name}<small>You · {me.role}</small></span></p><p><i className={connected?'presence purple':'presence away'}/><span>{them.name}<small>{them.role} · {connected?'in the call':'not joined yet'}</small></span></p></div>}

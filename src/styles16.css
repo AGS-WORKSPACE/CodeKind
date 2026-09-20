@@ -2784,10 +2784,15 @@
 .today-list strong { font-size: 12px; }
 .today-list span { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; }
 .today-list small { color: var(--muted); font-size: 11px; font-weight: 400; }
-.dash-main .student-table.live article { grid-template-columns: 42px minmax(140px, 1.1fr) minmax(160px, 1.5fr) minmax(90px, .7fr) minmax(150px, 1fr) auto; }
+/* The row's columns may shrink to their text, so the actions at the end keep their own space
+   instead of being squeezed against the edge or pushed past it. */
+.dash-main .student-table.live article { grid-template-columns: 42px minmax(120px, 1.1fr) minmax(110px, 1.5fr) minmax(80px, .7fr) minmax(120px, 1fr) auto; gap: 18px; padding: 16px 20px; }
+.dash-main .student-table.live article > * { min-width: 0; }
 .dash-main .student-table.live .text-link { font-size: 11px; }
-@media (max-width: 900px) {
-  .dash-main .student-table.live article { grid-template-columns: 42px 1fr 1fr 1fr auto; }
+.dash-main .student-table.live .student-actions { gap: 18px; }
+@media (max-width: 1150px) {
+  .dash-main .student-table.live article { grid-template-columns: 42px 1fr 1fr 1fr auto; gap: 14px; padding: 14px 16px; }
+  .dash-main .student-table.live article > span:nth-of-type(2) { display: none; }
 }
 @media (max-width: 650px) {
   .dash-main .student-table.live article { grid-template-columns: 42px 1fr; }
@@ -3327,3 +3332,28 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 .lesson-dialog .time-selection { padding: 16px; }
 .lesson-dialog-date { margin-top: 14px; }
 .lesson-dialog-date input { width: 100%; min-height: 42px; }
+
+/* The lesson room without a code editor: the call or the whiteboard fills the middle. */
+.premium-classroom.no-editor .classroom-grid { grid-template-columns: minmax(430px, 1fr) 320px; }
+.call-unavailable { margin: 0; padding: 10px 18px; background: #3a2a18; color: #f3d9a8; font-size: .82rem; }
+.call-link-down { display: block; max-width: 34ch; margin-top: 8px; color: #f0b884; font-size: .72rem; line-height: 1.5; }
+
+@media (max-width: 1100px) {
+  .premium-classroom.no-editor .classroom-grid { grid-template-columns: minmax(340px, 1fr) 280px; }
+}
+
+/* The lesson chat: the same thread as the messages page, in the room. */
+.class-chat { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.chat-log { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.chat-empty { margin: auto 0; color: #7e918a; font-size: .78rem; line-height: 1.6; text-align: center; }
+.chat-log article { display: flex; gap: 8px; align-items: flex-end; }
+.chat-log article.mine { justify-content: flex-end; }
+.chat-log p { max-width: 82%; margin: 0; padding: 9px 12px; border-radius: 12px; background: #16261f; color: #d9e7e1; font-size: .8rem; line-height: 1.5; }
+.chat-log article.mine p { background: #2e7357; color: #fff; }
+.chat-avatar { display: grid; place-items: center; width: 26px; height: 26px; flex: none; border-radius: 50%; background: #23372e; color: #bfe3d0; font-size: .62rem; font-weight: 700; }
+.chat-error { margin: 0; padding: 10px 14px; color: #f0a98a; font-size: .75rem; }
+.chat-compose { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #1d2e27; }
+.chat-compose input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid #223730; border-radius: 9px; background: #101d18; color: #e3efe9; font: inherit; font-size: .8rem; outline: 0; }
+.chat-compose .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; font-size: .78rem; }
+.lesson-notes textarea { width: 100%; min-height: 240px; padding: 12px; border: 1px solid #223730; border-radius: 10px; background: #101d18; color: #e3efe9; font: inherit; font-size: .8rem; line-height: 1.6; resize: vertical; }
+.lesson-notes small { display: block; margin-top: 8px; color: #7e918a; font-size: .7rem; }
