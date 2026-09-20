@@ -3,7 +3,7 @@ import {Link,useParams} from 'react-router-dom';
 import {ArrowLeft,ArrowRight,CalendarDays,Check,ChevronLeft,ChevronRight,Clock,Code2,Lock,ShieldCheck,Sparkles,Wallet} from 'lucide-react';
 import {Stars} from './components';
 import {tutorService} from './services/tutor.service';
-import {scheduleService} from './services/schedule.service';
+import {scheduleService,type Booking} from './services/schedule.service';
 import {FreeTimes,timeLabel} from './free-times';
 import {localTimezone} from './data/locations';
 import type {Tutor} from './types';
@@ -20,6 +20,7 @@ type LessonType='TRIAL'|'REGULAR';
 const CURRENCY:CurrencyCode='USD';
 const dateKey=(date:Date)=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 const prettyDate=(value:string)=>new Intl.DateTimeFormat('en',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).format(new Date(`${value}T12:00:00`));
+const whenText=(iso:string)=>new Intl.DateTimeFormat('en',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}).format(new Date(iso));
 
 export function FrontendBooking(){
   const{tutorId}=useParams();
@@ -42,6 +43,12 @@ function BookingFlow({tutor}:{tutor:Tutor}){
   const{user}=useAuth();
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState<string|null>(null);
+  /* A second session with the same tutor is allowed — a weekly lesson looks exactly like this — but
+     the learner should know about the one they already have before paying for another. */
+  const booked=useLoader(()=>scheduleService.list('upcoming'),[tutor.id]);
+  const already=useMemo(()=>(booked.data??[])
+    .filter(session=>session.tutor.id===tutor.id&&new Date(session.startsAt).getTime()>Date.now())
+    .sort((a,b)=>a.startsAt.localeCompare(b.startsAt)),[booked.data,tutor.id]);
   const titles=['Choose a lesson type','Choose lesson duration','Select a date','Select an available time','Review your booking','Payment details','Your lesson is booked!'];
   /* The tutor's listed price is an hourly rate. Everything downstream bills per minute, so the
      booking carries the rate and the scheduled duration rather than a fixed session price. */
@@ -69,6 +76,7 @@ function BookingFlow({tutor}:{tutor:Tutor}){
 
   return <main className="booking-flow booking-seven">
     <Link to={`/tutor/${tutor.id}`} className="backlink"><ArrowLeft size={14}/> Back to {tutor.name}</Link>
+    {step<7&&already.length>0&&<AlreadyBooked sessions={already} tutor={tutor.name}/>}
     <div className="booking-steps" aria-label={`Booking step ${step} of 6`}>{[1,2,3,4,5,6,7].map(number=><div className={step>=number?'active':''} key={number}><b>{step>number?<Check/>:number}</b></div>)}</div>
     {step===7?<Confirmation tutor={tutor} duration={duration} type={type} date={selectedDate} time={time} held={price}/>:<div className={`booking-layout ${step===5?'review-step':''}`}>
       <section>
@@ -85,6 +93,16 @@ function BookingFlow({tutor}:{tutor:Tutor}){
       <aside><TutorMini tutor={tutor}/><hr/>{step===5?<div className="review-total"><span>Held at booking</span><strong>{formatMoney(price,CURRENCY)}</strong><small>You are billed for the minutes actually taught; the rest is returned.</small></div>:<Summary tutor="" type={type} duration={duration} date={selectedDate} time={time} price={price} rate={hourlyRate}/>}</aside>
     </div>}
   </main>;
+}
+
+/** What the learner already has with this tutor, so a second booking is a choice rather than a slip. */
+function AlreadyBooked({sessions,tutor}:{sessions:Booking[];tutor:string}){
+  const one=sessions.length===1;
+  return <div className="already-booked">
+    <CalendarDays size={16}/>
+    <p>You already have {one?'a session':`${sessions.length} sessions`} booked with {tutor.split(' ')[0]} — the next on <strong>{whenText(sessions[0]!.startsAt)}</strong>. Booking now adds another lesson.</p>
+    <Link className="text-link" to="/student/lessons">See {one?'it':'them'}</Link>
+  </div>;
 }
 
 function BookingCalendar({month,selected,onMonthChange,onSelect}:{month:Date;selected:string;onMonthChange:(date:Date)=>void;onSelect:(value:string)=>void}){
