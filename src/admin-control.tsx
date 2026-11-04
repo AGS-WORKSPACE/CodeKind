@@ -1,7 +1,7 @@
 import{useState}from'react';
 import{Link,NavLink,useLocation,useNavigate}from'react-router-dom';
 import{useAuth}from'./auth';
-import{Activity,BookOpen,Bug,CalendarDays,CircleDollarSign,ClipboardList,Code2,FileText,Gavel,HandCoins,Languages,LayoutDashboard,LogOut,Menu,Plus,Scale,Search,UserCog,Users,X}from'lucide-react';
+import{Activity,BookOpen,TrendingUp,Bug,CalendarDays,CircleDollarSign,ClipboardList,Code2,FileText,Gavel,HandCoins,Languages,LayoutDashboard,LogOut,Menu,Plus,Scale,Search,UserCog,Users,X}from'lucide-react';
 import{useLoader}from'./hooks/use-payments';
 import{adminPaymentsService}from'./services/admin-payments.service';
 import{adminTutorService}from'./services/admin-tutors.service';
@@ -11,13 +11,14 @@ import{AdminErrorLog}from'./admin-error-log';
 import{AdminReferenceLists}from'./admin-reference-lists';
 import{AdminSessionEvidence}from'./admin-session-evidence';
 import{AdminTutorApplications}from'./admin-tutor-applications';
+import{AdminMetrics}from'./admin-metrics';
 import{AdminPaths}from'./admin-paths';
 import{AdminAudit,AdminBookings,AdminPeople,AdminTeam}from'./admin-people';
 import{adminControlService}from'./services/admin-users.service';
 import{WorkspaceMenu}from'./workspace-menu';
 
 const groups=[
- ['Overview',[['Dashboard','']]],
+ ['Overview',[['Dashboard',''],['Business Metrics','metrics']]],
  ['People',[['Users','users'],['Tutor Applications','tutor-applications']]],
  ['Learning',[['Learning Paths','learning-paths']]],
  ['Lessons',[['Bookings','bookings'],['Session Evidence','session-evidence']]],
@@ -26,7 +27,7 @@ const groups=[
  ['Platform',[['Reference Lists','reference-lists'],['Administrators','admins'],['Audit Trail','audit-log'],['Error Log','error-log']]]
 ] as const;
 const icons:Record<string,React.ReactNode>={
- '':<LayoutDashboard/>,users:<Users/>,'tutor-applications':<ClipboardList/>,'learning-paths':<BookOpen/>,
+ '':<LayoutDashboard/>,metrics:<TrendingUp/>,users:<Users/>,'tutor-applications':<ClipboardList/>,'learning-paths':<BookOpen/>,
  bookings:<CalendarDays/>,'session-evidence':<Activity/>,
  'session-payments':<Scale/>,'wallet-credits':<HandCoins/>,'money-settings':<CircleDollarSign/>,
  appeals:<Gavel/>,'reference-lists':<Languages/>,admins:<UserCog/>,'audit-log':<FileText/>,'error-log':<Bug/>
@@ -34,7 +35,7 @@ const icons:Record<string,React.ReactNode>={
 
 const label=(value:string)=>value.replaceAll('-',' ').replace(/\b\w/g,x=>x.toUpperCase());
 
-export function AdminControlCentre(){const{pathname}=useLocation();const[nav,setNav]=useState(false);const{logout}=useAuth();const navigate=useNavigate();const signOut=async()=>{await logout();navigate('/')};const parts=pathname.split('/').filter(Boolean).slice(1);const section=parts[0]??'';return <div className="admin-centre"><aside className={nav?'admin-side open':'admin-side'}><div className="admin-brand"><Link to="/admin"><Code2/> <span>pairlore</span><b>ADMIN</b></Link><button onClick={()=>setNav(false)} aria-label="Close navigation"><X/></button></div><nav>{groups.map(([group,items])=><div className="admin-nav-group" key={group}><span>{group}</span>{items.map(([name,path])=><NavLink end={path===''} onClick={()=>setNav(false)} to={`/admin${path?`/${path}`:''}`} key={path}><i>{icons[path]}</i>{name}</NavLink>)}</div>)}</nav><button type="button" className="admin-logout" onClick={signOut}><LogOut/> Log out</button></aside><main className="admin-main"><AdminHeader openNav={()=>setNav(true)}/>{section===''?<AdminOverview/>:section==='users'?<AdminPeople/>:section==='bookings'?<AdminBookings/>:section==='admins'?<AdminTeam/>:section==='audit-log'?<AdminAudit/>:section==='learning-paths'?<AdminPaths slug={parts[1]}/>:section==='session-payments'?<AdminSessionPayments/>:section==='money-settings'?<AdminMoneySettings/>:section==='wallet-credits'?<AdminCredits/>:section==='appeals'?<AdminAppeals/>:section==='error-log'?<AdminErrorLog/>:section==='reference-lists'?<AdminReferenceLists kind={parts[1]}/>:section==='session-evidence'?<AdminSessionEvidence/>:section==='tutor-applications'?<AdminTutorApplications/>:<AdminSoon section={section}/>}</main></div>}
+export function AdminControlCentre(){const{pathname}=useLocation();const[nav,setNav]=useState(false);const{logout}=useAuth();const navigate=useNavigate();const signOut=async()=>{await logout();navigate('/')};const parts=pathname.split('/').filter(Boolean).slice(1);const section=parts[0]??'';return <div className="admin-centre"><aside className={nav?'admin-side open':'admin-side'}><div className="admin-brand"><Link to="/admin"><Code2/> <span>pairlore</span><b>ADMIN</b></Link><button onClick={()=>setNav(false)} aria-label="Close navigation"><X/></button></div><nav>{groups.map(([group,items])=><div className="admin-nav-group" key={group}><span>{group}</span>{items.map(([name,path])=><NavLink end={path===''} onClick={()=>setNav(false)} to={`/admin${path?`/${path}`:''}`} key={path}><i>{icons[path]}</i>{name}</NavLink>)}</div>)}</nav><button type="button" className="admin-logout" onClick={signOut}><LogOut/> Log out</button></aside><main className="admin-main"><AdminHeader openNav={()=>setNav(true)}/>{section===''?<AdminOverview/>:section==='metrics'?<AdminMetrics/>:section==='users'?<AdminPeople/>:section==='bookings'?<AdminBookings/>:section==='admins'?<AdminTeam/>:section==='audit-log'?<AdminAudit/>:section==='learning-paths'?<AdminPaths slug={parts[1]}/>:section==='session-payments'?<AdminSessionPayments/>:section==='money-settings'?<AdminMoneySettings/>:section==='wallet-credits'?<AdminCredits/>:section==='appeals'?<AdminAppeals/>:section==='error-log'?<AdminErrorLog/>:section==='reference-lists'?<AdminReferenceLists kind={parts[1]}/>:section==='session-evidence'?<AdminSessionEvidence/>:section==='tutor-applications'?<AdminTutorApplications/>:<AdminSoon section={section}/>}</main></div>}
 
 function AdminHeader({openNav}:{openNav:()=>void}){
  const[query,setQuery]=useState('');
