@@ -8,7 +8,7 @@ export type ListBlock={type:'list';items:[label:string,tag:string,tone:Tone][]};
 export type SwatchBlock={type:'swatches';items:[label:string,color:string][]};
 export type PanelBlock=CodeBlock|MeterBlock|BarBlock|ListBlock|SwatchBlock;
 export type Tone='ok'|'warn'|'risk'|'idle';
-export type DomainIcon='code'|'brain'|'chart'|'cloud'|'shield'|'pen'|'languages';
+export type DomainIcon='code'|'brain'|'chart'|'cloud'|'shield'|'pen'|'languages'|'network';
 
 export type Domain={
  id:string;
@@ -123,6 +123,26 @@ export const domains:Domain[]=[
   {type:'meters',items:[['Rollout progress','62%',62]]}]},
  mentor:{initials:'TR',name:'Tomás',role:'Platform engineer',quote:'Before we scale it, tell me what you’d roll back to.'},
  next:{label:'Next session',when:'Today · 8:15 PM'},
+},
+{
+ id:'network',
+ label:'Core Network & Telecom',
+ chip:'Core Network',
+ icon:'network',
+ pill:'Learn with carrier network engineers',
+ headline:['Carry the traffic.','Trace every hop.'],
+ blurb:'Routing, signalling and the mobile core, taught by engineers who keep live operator networks standing through the nights nobody sees.',
+ search:'Try “5G core”, “BGP” or “VoLTE”',
+ theme:{accent:'#17808f',shell:'#061f24',bar:'#0e3038',glow:'#b5eff5'},
+ panel:{file:'core-health.watch',blocks:[
+  {type:'list',items:[
+   ['AMF · registration','99.98% success','ok'],
+   ['VoLTE · call setup','2.1s, drifting up','warn'],
+   ['BGP · lagos-ix peer','established 41d','ok'],
+   ['Backhaul · ring 7','0.4% loss','warn']]},
+  {type:'meters',items:[['Attach success','99.2%',99],['Peak throughput','18.4 Gbps',74]]}]},
+ mentor:{initials:'CE',name:'Chidi',role:'Core network engineer',quote:'The alarm is the symptom. Read the signalling before you touch a single config.'},
+ next:{label:'Next session',when:'Wednesday · 7:00 PM'},
 },
 {
  id:'security',
