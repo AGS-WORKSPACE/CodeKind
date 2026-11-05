@@ -6,6 +6,7 @@ import{useLoader}from'./hooks/use-payments';
 import{countries}from'./data/locations';
 import{relativeTime}from'./lib/money';
 import{adminTutorService,type ReviewStatus,type TutorApplication}from'./services/admin-tutors.service';
+import{EmptyState}from'./ui/states';
 
 const TABS:[ReviewStatus,string][]=[['submitted','Waiting for review'],['approved','Approved'],['rejected','Needs changes']];
 const countryName=(code:string|null)=>countries.find(c=>c.code===code)?.label??'No country set';
@@ -37,7 +38,7 @@ export function AdminTutorApplications(){
   <div className="error-log-filters">{TABS.map(([value,name])=><button type="button" className={status===value?'active':''} onClick={()=>setStatus(value)} key={value}>{name}</button>)}</div>
   {list.error&&<p className="ledger-error">{list.error}</p>}
   {list.loading&&!rows.length?<div className="workspace-skeleton"><i/><i/></div>
-   :!rows.length?<div className="api-state"><Check/><h3>{status==='submitted'?'No applications waiting':'Nothing here yet'}</h3><p>{status==='submitted'?'Every submitted profile has been reviewed.':'Decisions you make will appear here.'}</p></div>
+   :!rows.length?<EmptyState icon={<Check/>} title={status==='submitted'?'No applications waiting':'Nothing here yet'}>{status==='submitted'?'Every submitted profile has been reviewed.':'Decisions you make will appear here.'}</EmptyState>
    :<div className="application-table">{rows.map(tutor=><ApplicationCard key={tutor.id} tutor={tutor} status={status} busy={busy===tutor.id}
      onApprove={()=>decide(tutor,'approved')} onReject={()=>setRejecting(tutor)}/>)}</div>}
   {rejecting&&<RejectDialog tutor={rejecting} busy={busy===rejecting.id} onClose={()=>setRejecting(null)} onConfirm={reason=>decide(rejecting,'rejected',reason)}/>}

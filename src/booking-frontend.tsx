@@ -13,6 +13,7 @@ import {useLoader} from './hooks/use-payments';
 import {walletService} from './services/wallet.service';
 import {formatMoney,prorate,toMinor} from './lib/money';
 import type {CurrencyCode} from './types/payments';
+import{ErrorState}from'./ui/states';
 
 type LessonType='TRIAL'|'REGULAR';
 /* Tutors list their rates in dollars, so a direct booking is a USD session and is escrowed from the
@@ -25,7 +26,7 @@ const whenText=(iso:string)=>new Intl.DateTimeFormat('en',{weekday:'short',day:'
 export function FrontendBooking(){
   const{tutorId}=useParams();
   const loaded=useLoader(()=>tutorService.detail(tutorId??''),[tutorId]);
-  if(loaded.error)return <main className="booking-flow"><div className="api-state error"><ShieldCheck/><h3>This tutor cannot be booked</h3><p>{loaded.error}</p><Link className="btn" to="/tutors">Find another tutor</Link></div></main>;
+  if(loaded.error)return <main className="booking-flow"><ErrorState title="This tutor cannot be booked" message={loaded.error} action={<Link className="btn" to="/tutors">Find another tutor</Link>}/></main>;
   if(!loaded.data)return <main className="booking-flow"><p className="org-empty">Loading the tutor…</p></main>;
   return <BookingFlow tutor={loaded.data}/>;
 }

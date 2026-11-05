@@ -1,6 +1,9 @@
 import type{Tutor}from'../types';import{paths,skills as featuredSkills,tutors as mockTutors}from'../data/mock';import{countries}from'../data/locations';import{ApiError,api,offlineFallback}from'./api';
 export type Skill={id:string;name:string;category?:string};
 export type TutorStatus='draft'|'submitted'|'approved'|'rejected';
+export type CvMatch={code:string;label:string};
+/** A profile as an uploaded CV suggests it. Nothing is saved until the applicant submits the form. */
+export type CvDraft={headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;skills:CvMatch[];languages:CvMatch[];githubUrl:string;portfolioUrl:string;linkedinUrl:string;unmatched:string[]};
 export type TutorProfileInput={headline:string;bio:string;yearsOfExperience:number;teachingExperience:string;languages:string[];hourlyRate:number;trialRate:number;githubUrl:string;portfolioUrl:string;linkedinUrl:string;skills:{code:string;yearsExperience:number;isPrimary:boolean}[]};
 export type TutorProfile=Omit<TutorProfileInput,'githubUrl'|'portfolioUrl'|'linkedinUrl'|'skills'>&{id:string;firstName:string;lastName:string;country:string|null;timezone:string;currency:string;githubUrl:string|null;portfolioUrl:string|null;linkedinUrl:string|null;status?:TutorStatus;reviewNote?:string;rating:number;reviewCount:number;skills:{code:string;name:string;yearsExperience:number;isPrimary:boolean}[]};
 // Offline, the catalogue is every skill the demo data already teaches, across all domains.
@@ -35,5 +38,8 @@ export const tutorService={
  skills:()=>offlineFallback(()=>api<{code:string;label:string;category?:string}[]>('/reference/skills').then(items=>items.map(item=>({id:item.code,name:item.label,category:item.category}))),async()=>offlineSkills()),
  /** The signed-in tutor's own profile, or null before they have saved one. */
  myProfile:()=>offlineFallback(()=>api<{tutor:TutorProfile}>('/tutor/profile').then(r=>r.tutor).catch(e=>{if(e instanceof ApiError&&e.status===404)return null;throw e}),async()=>readSaved()),
+ /** Reads an uploaded CV into a draft the applicant can correct. There is no offline answer:
+     without the API there is no model to read it. */
+ readCv:(file:File)=>{const body=new FormData();body.append('file',file);return api<{draft:CvDraft}>('/tutor/profile/cv',{method:'POST',body}).then(r=>r.draft)},
  /** Saving a complete profile submits it for review, unless it is work in progress. */
  saveProfile:(input:TutorProfileInput,submit=true)=>offlineFallback(()=>api<{tutor:TutorProfile}>('/tutor/profile',{method:'PUT',body:JSON.stringify({...input,submit})}).then(r=>r.tutor),async()=>{const saved={...input,id:'offline',firstName:'',lastName:'',country:null,timezone:'UTC',currency:'USD',status:'submitted' as const,rating:0,reviewCount:0,githubUrl:input.githubUrl||null,portfolioUrl:input.portfolioUrl||null,linkedinUrl:input.linkedinUrl||null,skills:input.skills.map(s=>({...s,name:s.code}))};try{localStorage.setItem(PROFILE_KEY,JSON.stringify(saved))}catch{/* storage blocked: the demo flow still completes */}return saved})};

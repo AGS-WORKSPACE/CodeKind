@@ -1,12 +1,13 @@
 import{useEffect,useMemo,useState}from'react';
 import{Link,useNavigate,useParams}from'react-router-dom';
-import{ExternalLink,Search,ShieldCheck}from'lucide-react';
+import{ExternalLink,Search}from'lucide-react';
 import{Filters,SkillBadge,Stars,TutorCard,type TutorFilterState}from'./components';
 import{useLoader}from'./hooks/use-payments';
 import{tutorService}from'./services/tutor.service';
 import{useReference}from'./services/reference.service';
 import{languages as offlineLanguages}from'./data/languages';
 import{ReviewList}from'./reviews-pages';
+import{EmptyState,ErrorState}from'./ui/states';
 
 const EMPTY_FILTERS:TutorFilterState={skill:'',maxPrice:'',experience:'',language:''};
 
@@ -66,9 +67,9 @@ export function Tutors(){
     </div>
     {results.loading&&search.trim()&&<p className="search-status">Finding the best matches…</p>}
     {results.loading&&!results.data?<LoadingCards/>
-     :results.error?<ErrorState message={results.error} onRetry={()=>results.reload()}/>
+     :results.error?<ErrorState title="We couldn’t load tutors" message={results.error} onRetry={()=>results.reload()}/>
      :items.length?<div className="tutor-list">{items.map(t=><TutorCard key={t.id} tutor={t}/>)}</div>
-     :<div className="api-state"><Search/><h3>No tutors match yet</h3><p>Try another skill, or remove some filters.</p></div>}
+     :<EmptyState icon={<Search/>} title="No tutors match yet">Try another skill, or remove some filters.</EmptyState>}
     {pagination&&pagination.pages>1&&<nav className="results-pages" aria-label="Pages">
      <button type="button" className="btn ghost small" disabled={page<=1} onClick={()=>setPage(page-1)}>Previous</button>
      <span>Page {pagination.page} of {pagination.pages}</span>
@@ -80,12 +81,12 @@ export function Tutors(){
 }
 
 function LoadingCards(){return <div className="tutor-list">{[1,2,3].map(i=><div className="api-skeleton" key={i}><i/><div><b/><span/><span/></div></div>)}</div>}
-function ErrorState({message,onRetry}:{message:string;onRetry:()=>void}){return <div className="api-state error"><ShieldCheck/><h3>We couldn’t load tutors</h3><p>{message}</p><button className="btn" onClick={onRetry}>Try again</button></div>}
+
 
 export function TutorProfile(){
  const{id}=useParams();
  const tutor=useLoader(()=>tutorService.detail(id??''),[id]);
- if(tutor.error)return <main className="profile-page"><div className="api-state error"><ShieldCheck/><h3>This tutor is not available</h3><p>{tutor.error}</p><Link className="btn" to="/tutors">Find another tutor</Link></div></main>;
+ if(tutor.error)return <main className="profile-page"><ErrorState title="This tutor is not available" message={tutor.error} action={<Link className="btn" to="/tutors">Find another tutor</Link>}/></main>;
  if(!tutor.data)return <main className="profile-page"><LoadingCards/></main>;
  const t=tutor.data;
  const trial=t.trialPrice??Math.round(t.price*.55);

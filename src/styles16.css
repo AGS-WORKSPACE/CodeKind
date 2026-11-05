@@ -3232,6 +3232,19 @@ button.route-node:hover .route-stop { transform: scale(1.15); border-color: #2e8
 .onboarding .btn:disabled { opacity: .45; }
 
 /* What the reviewer will see, set out like a stamped cover sheet. */
+/* The CV shortcut sits above the first question, and reads as an offer rather than a demand. */
+.cv-upload { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 14px; padding: 16px 18px; border: 1px dashed #b7d7c7; border-radius: 14px; background: #f6faf8; }
+.cv-upload > svg { width: 22px; height: 22px; color: #39966f; }
+.cv-upload > div { display: grid; gap: 3px; min-width: 0; }
+.cv-upload strong { font-size: .92rem; }
+.cv-upload span, .cv-upload small { color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.cv-upload-note { color: var(--green); }
+.cv-upload-error { color: #b4472f; }
+.cv-upload .btn { flex: none; }
+.cv-upload .spin { animation: cv-spin 1s linear infinite; }
+@keyframes cv-spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .cv-upload { grid-template-columns: auto 1fr; } .cv-upload .btn { grid-column: 2; justify-self: start; } }
+
 .apply-summary { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin-top: 8px; padding: 18px 20px; border: 1px solid var(--line); border-left: 3px solid #3fa278; border-radius: 14px; background: #fff; }
 .apply-summary > svg { width: 26px; height: 26px; color: #39966f; }
 .apply-summary > div { display: grid; gap: 3px; }

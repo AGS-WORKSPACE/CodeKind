@@ -8,6 +8,7 @@ import{adminControlService,type AdminPerson,type AdminTeamMember,type AuditEntry
 import{formatMoney,formatDateTime,relativeTime}from'./lib/money';
 import type{Booking}from'./services/schedule.service';
 import type{CurrencyCode}from'./types/payments';
+import{EmptyState}from'./ui/states';
 
 const ROLES:[string,string][]=[['','Everyone'],['learner','Learners'],['tutor','Tutors'],['organisation','Organisations'],['admin','Admins']];
 const errorOf=(problem:unknown,fallback:string)=>problem instanceof Error?problem.message:fallback;
@@ -52,7 +53,7 @@ export function AdminPeople(){
   </Filters>
   {people.error&&<p className="ledger-error">{people.error}</p>}
   {people.loading&&!rows.length?<div className="workspace-skeleton"><i/><i/></div>
-   :!rows.length?<div className="api-state"><Search/><h3>Nobody matches that</h3><p>Try another name, email or filter.</p></div>
+   :!rows.length?<EmptyState icon={<Search/>} title="Nobody matches that">Try another name, email or filter.</EmptyState>
    :<ol className="register">{rows.map(person=><PersonRow key={person.id} person={person} onAct={()=>setActing(person)}/>)}</ol>}
   <Pages page={page} total={people.data?.total??0} pageSize={people.data?.pageSize??25} onPage={setPage}/>
   {acting&&<SuspendDialog person={acting} onClose={()=>setActing(null)} onDone={async()=>{setActing(null);await people.reload()}}/>}
@@ -137,7 +138,7 @@ export function AdminBookings(){
   </Filters>
   {bookings.error&&<p className="ledger-error">{bookings.error}</p>}
   {bookings.loading&&!rows.length?<div className="workspace-skeleton"><i/><i/></div>
-   :!rows.length?<div className="api-state"><CalendarX/><h3>No sessions match that</h3><p>Try another search or view.</p></div>
+   :!rows.length?<EmptyState icon={<CalendarX/>} title="No sessions match that">Try another search or view.</EmptyState>
    :<ol className="board">{rows.map(booking=><BookingRow key={booking.id} booking={booking} onCancel={()=>setCancelling(booking)}/>)}</ol>}
   <Pages page={page} total={bookings.data?.total??0} pageSize={bookings.data?.pageSize??25} onPage={setPage}/>
   {cancelling&&<CancelDialog booking={cancelling} onClose={()=>setCancelling(null)} onDone={async()=>{setCancelling(null);await bookings.reload()}}/>}
@@ -245,7 +246,7 @@ export function AdminAudit(){
   </header>
   {trail.error&&<p className="ledger-error">{trail.error}</p>}
   {trail.loading&&!rows.length?<div className="workspace-skeleton"><i/><i/></div>
-   :!rows.length?<div className="api-state"><ShieldCheck/><h3>Nothing recorded yet</h3><p>Actions appear here as soon as an admin takes one.</p></div>
+   :!rows.length?<EmptyState icon={<ShieldCheck/>} title="Nothing recorded yet">Actions appear here as soon as an admin takes one.</EmptyState>
    :<ol className="trail">{rows.map(entry=><TrailLine key={entry.id} entry={entry}/>)}</ol>}
   <Pages page={page} total={trail.data?.total??0} pageSize={trail.data?.pageSize??25} onPage={setPage}/>
  </div>;

@@ -4,10 +4,11 @@ import{ArrowRight,Check,ShieldCheck}from'lucide-react';
 import{useAuth}from'./auth';
 import{useToast}from'./ui-feedback';
 import{LanguagePicker,SkillPicker}from'./pickers';
+import{CvUpload}from'./cv-upload';
 import{CountrySelect,TimezoneSelect}from'./search-select';
 import{localTimezone}from'./data/locations';
 import{useLoader}from'./hooks/use-payments';
-import{tutorService,type TutorProfile}from'./services/tutor.service';
+import{tutorService,type CvDraft,type TutorProfile}from'./services/tutor.service';
 import{ApiError}from'./services/api';
 import type{SessionUser}from'./services/auth.service';
 
@@ -60,6 +61,21 @@ function OnboardingForm({user,saved}:{user:SessionUser|null;saved:TutorProfile|n
   <label>{label}<input type={type} min={type==='number'?0:undefined} step={type==='number'?'any':undefined} value={form[key]}
    onChange={e=>set(key,type==='number'?positive(e.target.value):e.target.value)}/></label>;
  const toggle=(code:string)=>setChosen(current=>current.includes(code)?current.filter(x=>x!==code):[...current,code]);
+
+ /* A CV fills in what it found and leaves the rest alone, so an applicant who has already typed
+    something does not lose it. Everything stays editable. */
+ const fromCv=(draft:CvDraft)=>{
+  setForm(current=>({...current,
+   headline:draft.headline||current.headline,
+   bio:draft.bio||current.bio,
+   yearsOfExperience:draft.yearsOfExperience||current.yearsOfExperience,
+   teachingExperience:draft.teachingExperience||current.teachingExperience,
+   githubUrl:draft.githubUrl||current.githubUrl,
+   portfolioUrl:draft.portfolioUrl||current.portfolioUrl,
+   linkedinUrl:draft.linkedinUrl||current.linkedinUrl}));
+  if(draft.skills.length)setChosen(current=>[...new Set([...current,...draft.skills.map(skill=>skill.code)])]);
+  if(draft.languages.length)setSpoken(current=>[...new Set([...current,...draft.languages.map(language=>language.label)])]);
+ };
  // Without these the profile saves as a draft and never reaches a reviewer, so the step holds.
  const blocked=step===1&&(!form.headline.trim()||!form.bio.trim())?'A headline and a short biography are needed to carry on.'
   :step===2&&!chosen.length?'Pick at least one subject you teach.':'';
@@ -98,6 +114,7 @@ function OnboardingForm({user,saved}:{user:SessionUser|null;saved:TutorProfile|n
   <section>
    {error&&<div className="form-error">{error}</div>}
    {step===1&&<div className="apply-form">
+    <CvUpload onDraft={fromCv}/>
     <div className="two">{field('First name','firstName')}{field('Last name','lastName')}</div>
     <CountrySelect value={form.country} onChange={value=>set('country',value)}/>
     <TimezoneSelect value={form.timezone} onChange={value=>set('timezone',value)}/>
